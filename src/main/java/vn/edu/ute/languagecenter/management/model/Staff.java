@@ -19,8 +19,9 @@ public class Staff {
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
-    @Column(name = "role", length = 100)
-    private String role;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private StaffRole role = StaffRole.Other;
 
     @Column(name = "phone", unique = true, length = 20)
     private String phone;
@@ -42,5 +43,6 @@ public class Staff {
     @OneToOne(mappedBy = "staff", fetch = FetchType.LAZY)
     private UserAccount userAccount;
 
+    public enum StaffRole { Admin, Consultant, Accountant, Manager, Other }
     public enum ActiveStatus { Active, Inactive }
 }

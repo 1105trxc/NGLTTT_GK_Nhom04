@@ -5,9 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/App.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/App.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/Attendance.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/Attendance.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/PlacementTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/PlacementTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/Room.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/Room.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/Staff.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/model/Staff.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/persistence.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/persistence.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,13 +41,18 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Application.App.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "lam",
+    "git-widget-placeholder": "main",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/vn/edu/ute/languagecenter/management/db",
-    "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java"
+    "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java",
+    "project.structure.last.edited": "Project",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.0"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -49,6 +61,28 @@
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04" />
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04\src\main\resources" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="ALTERNATIVE_JRE_PATH" value="17" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="MAIN_CLASS_NAME" value="vn.edu.ute.languagecenter.management.App" />
+      <module name="NGLTTT_GK_Nhom04" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="vn.edu.ute.languagecenter.management.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.App" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

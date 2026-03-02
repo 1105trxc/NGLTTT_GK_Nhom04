@@ -28,12 +28,16 @@ public class PlacementTest {
     @Column(name = "score", precision = 5, scale = 2)
     private BigDecimal score;
 
-    @Column(name = "suggested_level", length = 100)
-    private String suggestedLevel;
+    // Thêm mới: đổi từ VARCHAR(100) → ENUM('Beginner','Intermediate','Advanced')
+    @Enumerated(EnumType.STRING)
+    @Column(name = "suggested_level")
+    private SuggestedLevel suggestedLevel;
 
     @Column(name = "note", length = 255)
     private String note;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public enum SuggestedLevel { Beginner, Intermediate, Advanced }
 }

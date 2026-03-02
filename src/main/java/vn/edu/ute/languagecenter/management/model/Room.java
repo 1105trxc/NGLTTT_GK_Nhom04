@@ -30,6 +30,11 @@ public class Room {
     @Column(name = "status", nullable = false)
     private ActiveStatus status = ActiveStatus.Active;
 
+    // Thêm mới: branch_id từ ALTER TABLE rooms ADD COLUMN branch_id
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "branch_id")
+    private Branch branch;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

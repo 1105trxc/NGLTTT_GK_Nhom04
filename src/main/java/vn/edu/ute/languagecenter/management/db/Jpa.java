@@ -5,16 +5,28 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
 public final class Jpa {
-    private static final EntityManagerFactory EMF =
-            Persistence.createEntityManagerFactory("productPU");
 
-    private Jpa() {}
+    private static EntityManagerFactory emf;
+
+    private Jpa() {
+    }
 
     public static EntityManager em() {
-        return EMF.createEntityManager();
+        if (emf == null) {
+            try {
+                emf = Persistence.createEntityManagerFactory("languageCenterPU");
+            } catch (Exception e) {
+                System.err.println("❌ Cannot init EntityManagerFactory");
+                e.printStackTrace();
+                throw e;
+            }
+        }
+        return emf.createEntityManager();
     }
 
     public static void shutdown() {
-        EMF.close();
+        if (emf != null) {
+            emf.close();
+        }
     }
 }
