@@ -6,17 +6,40 @@
              version="3.0">
 
     <persistence-unit name="languageCenterPU" transaction-type="RESOURCE_LOCAL">
+
+        <!-- Đăng ký tất cả Entity classes để Hibernate/JPA nhận diện -->
+        <class>vn.edu.ute.languagecenter.management.model.UserAccount</class>
+        <class>vn.edu.ute.languagecenter.management.model.Teacher</class>
+        <class>vn.edu.ute.languagecenter.management.model.Staff</class>
+        <class>vn.edu.ute.languagecenter.management.model.Student</class>
+        <class>vn.edu.ute.languagecenter.management.model.Branch</class>
+        <class>vn.edu.ute.languagecenter.management.model.Notification</class>
+        <class>vn.edu.ute.languagecenter.management.model.Course</class>
+        <class>vn.edu.ute.languagecenter.management.model.Class_</class>
+        <class>vn.edu.ute.languagecenter.management.model.Room</class>
+        <class>vn.edu.ute.languagecenter.management.model.Schedule</class>
+        <class>vn.edu.ute.languagecenter.management.model.Enrollment</class>
+        <class>vn.edu.ute.languagecenter.management.model.Attendance</class>
+        <class>vn.edu.ute.languagecenter.management.model.Result</class>
+        <class>vn.edu.ute.languagecenter.management.model.Invoice</class>
+        <class>vn.edu.ute.languagecenter.management.model.Payment</class>
+        <class>vn.edu.ute.languagecenter.management.model.Promotion</class>
+        <class>vn.edu.ute.languagecenter.management.model.PlacementTest</class>
+        <class>vn.edu.ute.languagecenter.management.model.Certificate</class>
+
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.url"
                       value="jdbc:mysql://127.0.0.1:3306/mis_language_center?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh"/>
             <property name="jakarta.persistence.jdbc.user" value="root"/>
-            <property name="jakarta.persistence.jdbc.password" value="123456"/>
+            <!-- Thay đổi password dưới đây cho đúng với MySQL của bạn -->
+            <property name="jakarta.persistence.jdbc.password" value="25032005"/>
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
+            <!-- update: tự tạo / cập nhật cấu trúc bảng nếu thiếu, không xóa dữ liệu -->
+            <property name="hibernate.hbm2ddl.auto" value="none"/>
         </properties>
     </persistence-unit>
 

@@ -3,7 +3,6 @@ package vn.edu.ute.languagecenter.management.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -30,15 +29,14 @@ public class Branch {
     @Column(name = "status", nullable = false)
     private ActiveStatus status = ActiveStatus.Active;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private java.time.LocalDateTime createdAt;
 
     // Relations
     @OneToMany(mappedBy = "branch", fetch = FetchType.LAZY)
     private List<Class_> classes;
 
-    public enum ActiveStatus { Active, Inactive }
+    public enum ActiveStatus {
+        Active, Inactive
+    }
 }
