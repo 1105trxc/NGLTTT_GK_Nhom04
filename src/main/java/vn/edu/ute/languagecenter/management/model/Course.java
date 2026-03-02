@@ -48,11 +48,30 @@ public class Course {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
     // Relations
     @OneToMany(mappedBy = "course", fetch = FetchType.LAZY)
     private List<Class_> classes;
 
-    public enum Level { Beginner, Intermediate, Advanced }
-    public enum DurationUnit { Hour, Week }
-    public enum ActiveStatus { Active, Inactive }
+    public enum Level {
+        Beginner, Intermediate, Advanced
+    }
+
+    public enum DurationUnit {
+        Hour, Week
+    }
+
+    public enum ActiveStatus {
+        Active, Inactive
+    }
 }

@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>vn.edu.ute</groupId>
-    <artifactId>product-management-jpa-swing-solid</artifactId>
+    <artifactId>language-center-management</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -44,10 +44,30 @@
             <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.toedter</groupId>
+            <artifactId>jcalendar</artifactId>
+            <version>1.4</version>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -55,7 +75,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>vn.edu.ute.productmgmt.App</mainClass>
+                            <mainClass>vn.edu.ute.languagecenter.App</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

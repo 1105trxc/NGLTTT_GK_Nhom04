@@ -21,11 +21,11 @@ public class Class_ {
     @Column(name = "class_name", nullable = false, length = 150)
     private String className;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", nullable = false)
     private Course course;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "teacher_id")
     private Teacher teacher;
 
@@ -38,7 +38,7 @@ public class Class_ {
     @Column(name = "max_student", nullable = false)
     private Integer maxStudent = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "room_id")
     private Room room;
 
@@ -56,6 +56,17 @@ public class Class_ {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
     // Relations
     @OneToMany(mappedBy = "class_", fetch = FetchType.LAZY)
     private List<Enrollment> enrollments;
@@ -72,5 +83,7 @@ public class Class_ {
     @OneToMany(mappedBy = "class_", fetch = FetchType.LAZY)
     private List<Certificate> certificates;
 
-    public enum ClassStatus { Planned, Open, Ongoing, Completed, Cancelled }
+    public enum ClassStatus {
+        Planned, Open, Ongoing, Completed, Cancelled
+    }
 }

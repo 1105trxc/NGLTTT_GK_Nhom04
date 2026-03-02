@@ -5,10 +5,10 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 
 public final class Jpa {
-    private static final EntityManagerFactory EMF =
-            Persistence.createEntityManagerFactory("productPU");
+    private static final EntityManagerFactory EMF = Persistence.createEntityManagerFactory("LanguageCenterPU");
 
-    private Jpa() {}
+    private Jpa() {
+    }
 
     public static EntityManager em() {
         return EMF.createEntityManager();

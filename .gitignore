@@ -37,3 +37,9 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### private 
+.db.sql
+.PhanChiaCongViec.md
+.gitignore
+.context.md

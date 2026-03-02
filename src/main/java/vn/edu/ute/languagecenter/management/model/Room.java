@@ -36,6 +36,17 @@ public class Room {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
     // Relations
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<Class_> classes;
@@ -43,5 +54,7 @@ public class Room {
     @OneToMany(mappedBy = "room", fetch = FetchType.LAZY)
     private List<Schedule> schedules;
 
-    public enum ActiveStatus { Active, Inactive }
+    public enum ActiveStatus {
+        Active, Inactive
+    }
 }
