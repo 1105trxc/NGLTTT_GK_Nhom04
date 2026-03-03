@@ -1,46 +1,63 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.RoomDAO;
 import vn.edu.ute.languagecenter.management.model.Room;
+import vn.edu.ute.languagecenter.management.repo.RoomRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaRoomRepository;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service xử lý nghiệp vụ Phòng học.
+ */
 public class RoomService {
 
-    private final RoomDAO roomDAO = new RoomDAO();
+    private final RoomRepository roomRepo = new JpaRoomRepository();
 
     public Room save(Room room) {
         validate(room);
-        return roomDAO.save(room);
+        return roomRepo.save(room);
     }
 
     public Room update(Room room) {
         validate(room);
-        return roomDAO.update(room);
+        return roomRepo.update(room);
     }
 
     public Optional<Room> findById(Long id) {
-        return roomDAO.findById(id);
+        return roomRepo.findById(id);
     }
 
     public List<Room> findAll() {
-        return roomDAO.findAll();
+        return roomRepo.findAll();
     }
 
     public List<Room> findAllActive() {
-        return roomDAO.findAllActive();
+        return roomRepo.findAllActive();
     }
 
     public List<Room> findByName(String keyword) {
-        return roomDAO.findByName(keyword);
+        return roomRepo.findByName(keyword);
     }
 
     public void deleteById(Long id) {
-        roomDAO.deleteById(id);
+        roomRepo.deleteById(id);
     }
 
-    // ---- Validation ----
+    /**
+     * [LAMBDA 3] Sắp xếp phòng theo sức chứa giảm dần.
+     * Dùng Comparator lambda: (Room r) -> r.getCapacity()
+     * .reversed() đảo thành giảm dần.
+     */
+    public List<Room> findAllSortedByCapacity() {
+        return roomRepo.findAll().stream()
+                .sorted(Comparator.comparingInt(
+                        (Room r) -> r.getCapacity() != null ? r.getCapacity() : 0).reversed())
+                .toList();
+    }
+
+    // ---- Kiểm tra dữ liệu ----
     private void validate(Room room) {
         if (room.getRoomName() == null || room.getRoomName().trim().isEmpty()) {
             throw new IllegalArgumentException("Tên phòng không được để trống.");

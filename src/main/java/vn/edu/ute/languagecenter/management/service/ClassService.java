@@ -1,58 +1,74 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.ClassDAO;
 import vn.edu.ute.languagecenter.management.model.Class_;
+import vn.edu.ute.languagecenter.management.repo.ClassRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+/**
+ * Service xử lý nghiệp vụ Lớp học.
+ */
 public class ClassService {
 
-    private final ClassDAO classDAO = new ClassDAO();
+    private final ClassRepository classRepo = new JpaClassRepository();
 
     public Class_ save(Class_ cls) {
         validate(cls);
-        return classDAO.save(cls);
+        return classRepo.save(cls);
     }
 
     public Class_ update(Class_ cls) {
         validate(cls);
-        return classDAO.update(cls);
+        return classRepo.update(cls);
     }
 
     public Optional<Class_> findById(Long id) {
-        return classDAO.findById(id);
+        return classRepo.findById(id);
     }
 
     public List<Class_> findAll() {
-        return classDAO.findAll();
+        return classRepo.findAll();
     }
 
     public List<Class_> findByCourseId(Long courseId) {
-        return classDAO.findByCourseId(courseId);
+        return classRepo.findByCourseId(courseId);
     }
 
     public List<Class_> findByTeacherId(Long teacherId) {
-        return classDAO.findByTeacherId(teacherId);
+        return classRepo.findByTeacherId(teacherId);
     }
 
     public List<Class_> findByStatus(Class_.ClassStatus status) {
-        return classDAO.findByStatus(status);
+        return classRepo.findByStatus(status);
     }
 
     public List<Class_> findByName(String keyword) {
-        return classDAO.findByName(keyword);
+        return classRepo.findByName(keyword);
     }
 
     public long countEnrolledStudents(Long classId) {
-        return classDAO.countEnrolledStudents(classId);
+        return classRepo.countEnrolledStudents(classId);
     }
 
     public void deleteById(Long id) {
-        classDAO.deleteById(id);
+        classRepo.deleteById(id);
     }
 
-    // ---- Validation ----
+    /**
+     * [LAMBDA 4] Nhóm các lớp theo trạng thái bằng Collectors.groupingBy.
+     * Lambda: c -> c.getStatus() trích xuất key để nhóm.
+     * Kết quả Map<ClassStatus, List<Class_>>
+     */
+    public Map<Class_.ClassStatus, List<Class_>> groupByStatus() {
+        return classRepo.findAll().stream()
+                .collect(Collectors.groupingBy(c -> c.getStatus()));
+    }
+
+    // ---- Kiểm tra dữ liệu ----
     private void validate(Class_ cls) {
         if (cls.getClassName() == null || cls.getClassName().trim().isEmpty()) {
             throw new IllegalArgumentException("Tên lớp không được để trống.");
