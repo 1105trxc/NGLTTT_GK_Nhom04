@@ -15,7 +15,8 @@ public class TransactionManager {
             tx.commit();
             return result;
         } catch (Exception ex) {
-            if (tx.isActive()) tx.rollback();
+            if (tx.isActive())
+                tx.rollback();
             throw ex;
         } finally {
             em.close();

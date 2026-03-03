@@ -18,7 +18,7 @@ public class PlacementTest {
     @Column(name = "test_id")
     private Long testId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
@@ -40,4 +40,9 @@ public class PlacementTest {
     private LocalDateTime createdAt;
 
     public enum SuggestedLevel { Beginner, Intermediate, Advanced }
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 }

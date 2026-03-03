@@ -5,8 +5,13 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+<<<<<<< HEAD
     <groupId>vn.edu.ute.languagecenter.management</groupId>
     <artifactId>NGLTTT_GK_Nhom04</artifactId>
+=======
+    <groupId>vn.edu.ute</groupId>
+    <artifactId>language-center-management</artifactId>
+>>>>>>> khoa
     <version>1.0.0</version>
 
     <properties>
@@ -51,6 +56,11 @@
             <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.toedter</groupId>
+            <artifactId>jcalendar</artifactId>
+            <version>1.4</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -69,12 +79,31 @@
             <!-- Jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>17</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.4.2</version>
                 <configuration>
                     <archive>
                         <manifest>
+<<<<<<< HEAD
                             <mainClass>vn.edu.ute.languagecenter.management.App</mainClass>
+=======
+                            <mainClass>vn.edu.ute.languagecenter.App</mainClass>
+>>>>>>> khoa
                         </manifest>
                     </archive>
                 </configuration>

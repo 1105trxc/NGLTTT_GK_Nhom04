@@ -6,7 +6,23 @@
   <component name="ChangeListManager">
     <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+<<<<<<< HEAD
       <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" afterDir="false" />
+=======
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/CertificateDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/ClassDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/CourseDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/GenericDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/PlacementTestDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/RoomDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/ScheduleDAO.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/TransactionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/TransactionManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ClassService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ClassService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/CourseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/CourseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ExamAndCertService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ExamAndCertService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/RoomService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/RoomService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ScheduleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ScheduleService.java" afterDir="false" />
+>>>>>>> khoa
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +39,10 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="McpProjectServerCommands">
+    <commands />
+    <urls />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -33,13 +53,19 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+<<<<<<< HEAD
     "Application.App.executor": "Run",
     "Application.AttendancePanel.executor": "Run",
     "Application.EnrollmentPanel.executor": "Run",
     "Application.InvoicePaymentPanel.executor": "Run",
     "Application.ResultPanel.executor": "Run",
+=======
+    "Application.TestMainFrame.executor": "Run",
+>>>>>>> khoa
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+<<<<<<< HEAD
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
@@ -50,6 +76,24 @@
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.0"
+=======
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "khoa",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/hocTap/NNLTTT/GK_real/NGLTTT_GK_Nhom04",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+>>>>>>> khoa
   }
 }]]></component>
   <component name="RecentsManager">
@@ -140,7 +184,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.240" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.29346.240" />
       </set>
     </attachedChunks>
   </component>
@@ -151,8 +196,12 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1772436258259</updated>
+      <workItem from="1772502424189" duration="2310000" />
     </task>
     <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
