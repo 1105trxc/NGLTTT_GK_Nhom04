@@ -1,9 +1,9 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.UserAccountDAO;
-import vn.edu.ute.languagecenter.management.dao.TeacherDAO;
-import vn.edu.ute.languagecenter.management.dao.StaffDAO;
-import vn.edu.ute.languagecenter.management.dao.StudentDAO;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaUserAccountRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaTeacherRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaStaffRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaStudentRepository;
 import vn.edu.ute.languagecenter.management.model.*;
 
 import java.time.LocalDateTime;
@@ -17,10 +17,10 @@ import java.util.Optional;
  */
 public class UserService {
 
-    private final UserAccountDAO userDAO = new UserAccountDAO();
-    private final TeacherDAO teacherDAO = new TeacherDAO();
-    private final StaffDAO staffDAO = new StaffDAO();
-    private final StudentDAO studentDAO = new StudentDAO();
+    private final JpaUserAccountRepository userDAO = new JpaUserAccountRepository();
+    private final JpaTeacherRepository teacherDAO = new JpaTeacherRepository();
+    private final JpaStaffRepository staffDAO = new JpaStaffRepository();
+    private final JpaStudentRepository studentDAO = new JpaStudentRepository();
 
     /**
      * Xác thực đăng nhập.

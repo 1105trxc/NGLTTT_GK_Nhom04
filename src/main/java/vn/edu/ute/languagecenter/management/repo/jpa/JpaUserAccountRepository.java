@@ -1,28 +1,22 @@
-package vn.edu.ute.languagecenter.management.dao;
+package vn.edu.ute.languagecenter.management.repo.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import vn.edu.ute.languagecenter.management.model.UserAccount;
+import vn.edu.ute.languagecenter.management.repo.UserAccountRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-/**
- * UserAccountDAO - DAO chuyên biệt cho entity UserAccount.
- * Xử lý các truy vấn liên quan đến tài khoản người dùng và phân quyền.
- */
-public class UserAccountDAO extends GenericDAO<UserAccount> {
+/** JPA triển khai UserAccountRepository — xác thực đăng nhập, phân quyền. */
+public class JpaUserAccountRepository extends GenericRepository<UserAccount>
+        implements UserAccountRepository {
 
-    public UserAccountDAO() {
+    public JpaUserAccountRepository() {
         super(UserAccount.class);
     }
 
-    /**
-     * Tìm tài khoản theo tên đăng nhập (dùng cho chức năng Login).
-     * 
-     * @param username tên đăng nhập
-     * @return Optional<UserAccount> - có hoặc không có kết quả
-     */
+    @Override
     public Optional<UserAccount> findByUsername(String username) {
         EntityManager em = getEntityManager();
         try {
@@ -36,17 +30,10 @@ public class UserAccountDAO extends GenericDAO<UserAccount> {
         }
     }
 
-    /**
-     * Xác thực đăng nhập: so khớp username và password.
-     * 
-     * @param username     tên đăng nhập
-     * @param passwordHash mật khẩu đã băm (hoặc plain-text nếu chưa hash)
-     * @return Optional<UserAccount> nếu thông tin đăng nhập hợp lệ
-     */
+    @Override
     public Optional<UserAccount> login(String username, String passwordHash) {
         EntityManager em = getEntityManager();
         try {
-            // Tìm user đang active, khớp cả username lẫn passwordHash
             String hql = "SELECT u FROM UserAccount u " +
                     "WHERE u.username = :username " +
                     "  AND u.passwordHash = :pwd " +
@@ -61,12 +48,7 @@ public class UserAccountDAO extends GenericDAO<UserAccount> {
         }
     }
 
-    /**
-     * Lấy tất cả tài khoản theo role (phân lọc để quản lý).
-     * 
-     * @param role Admin / Teacher / Student / Staff
-     * @return danh sách tài khoản theo role đó
-     */
+    @Override
     public List<UserAccount> findByRole(UserAccount.UserRole role) {
         EntityManager em = getEntityManager();
         try {
@@ -79,11 +61,7 @@ public class UserAccountDAO extends GenericDAO<UserAccount> {
         }
     }
 
-    /**
-     * Lấy tất cả tài khoản bị khoá (is_active = false).
-     * 
-     * @return danh sách tài khoản bị khoá
-     */
+    @Override
     public List<UserAccount> findAllInactive() {
         EntityManager em = getEntityManager();
         try {

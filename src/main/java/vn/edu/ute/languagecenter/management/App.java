@@ -1,7 +1,7 @@
 package vn.edu.ute.languagecenter.management;
 
-import vn.edu.ute.languagecenter.management.gui.operation.LoginForm;
-import vn.edu.ute.languagecenter.management.gui.operation.MainDashboard;
+import vn.edu.ute.languagecenter.management.ui.LoginForm;
+import vn.edu.ute.languagecenter.management.ui.MainDashboard;
 import vn.edu.ute.languagecenter.management.model.UserAccount;
 
 import javax.swing.*;

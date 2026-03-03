@@ -1,6 +1,6 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.StudentDAO;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaStudentRepository;
 import vn.edu.ute.languagecenter.management.model.Student;
 
 import java.time.LocalDate;
@@ -13,7 +13,7 @@ import java.util.Optional;
  */
 public class StudentService {
 
-    private final StudentDAO studentDAO = new StudentDAO();
+    private final JpaStudentRepository studentDAO = new JpaStudentRepository();
 
     /**
      * Lấy tất cả học viên.

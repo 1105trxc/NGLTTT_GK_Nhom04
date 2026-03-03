@@ -1,6 +1,6 @@
-package vn.edu.ute.languagecenter.management.gui.operation;
+package vn.edu.ute.languagecenter.management.ui;
 
-import vn.edu.ute.languagecenter.management.dao.BranchDAO;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaBranchRepository;
 import vn.edu.ute.languagecenter.management.model.Branch;
 
 import javax.swing.*;
@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class BranchPanel extends JPanel {
 
-    private final BranchDAO branchDAO = new BranchDAO();
+    private final JpaBranchRepository branchDAO = new JpaBranchRepository();
 
     private JTable table;
     private DefaultTableModel tableModel;

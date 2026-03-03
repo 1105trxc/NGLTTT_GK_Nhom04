@@ -1,6 +1,6 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.TeacherDAO;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaTeacherRepository;
 import vn.edu.ute.languagecenter.management.model.Teacher;
 
 import java.time.LocalDateTime;
@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public class TeacherService {
 
-    private final TeacherDAO teacherDAO = new TeacherDAO();
+    private final JpaTeacherRepository teacherDAO = new JpaTeacherRepository();
 
     /**
      * Lấy tất cả giáo viên.

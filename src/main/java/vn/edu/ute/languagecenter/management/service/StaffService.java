@@ -1,6 +1,6 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.StaffDAO;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaStaffRepository;
 import vn.edu.ute.languagecenter.management.model.Staff;
 
 import java.time.LocalDateTime;
@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public class StaffService {
 
-    private final StaffDAO staffDAO = new StaffDAO();
+    private final JpaStaffRepository staffDAO = new JpaStaffRepository();
 
     /**
      * Lấy tất cả nhân viên.

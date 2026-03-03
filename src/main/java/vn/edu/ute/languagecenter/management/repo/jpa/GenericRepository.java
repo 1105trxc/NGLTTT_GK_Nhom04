@@ -1,4 +1,4 @@
-package vn.edu.ute.languagecenter.management.dao;
+package vn.edu.ute.languagecenter.management.repo.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
@@ -9,61 +9,47 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * GenericDAO<T> - Lớp DAO dùng chung cho tất cả Entity.
- * Cung cấp các thao tác CRUD cơ bản: tìm kiếm, lưu, cập nhật, xóa.
+ * GenericRepository<T> — lớp JPA base dùng chung cho tất cả JpaXxxRepository.
+ * Cung cấp CRUD cơ bản: save, update, delete, findById, findAll.
  *
  * @param <T> Kiểu Entity (ví dụ: Teacher, Student, ...)
  */
-public abstract class GenericDAO<T> {
+public abstract class GenericRepository<T> {
 
-    // Kiểu dữ liệu của Entity mà DAO này quản lý
     private final Class<T> entityClass;
 
-    protected GenericDAO(Class<T> entityClass) {
+    protected GenericRepository(Class<T> entityClass) {
         this.entityClass = entityClass;
     }
 
-    /**
-     * Tạo EntityManager mới từ Jpa factory.
-     * Mỗi giao dịch nên dùng một EntityManager riêng biệt.
-     */
     protected EntityManager getEntityManager() {
         return Jpa.em();
     }
 
-    /**
-     * Lưu một Entity mới vào database.
-     * 
-     * @param entity đối tượng cần lưu
-     */
+    /** INSERT entity mới vào DB. */
     public void save(T entity) {
         EntityManager em = getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            em.persist(entity); // persist: đưa entity vào trạng thái managed và INSERT vào DB
+            em.persist(entity);
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive())
-                tx.rollback(); // rollback nếu có lỗi
+                tx.rollback();
             throw new RuntimeException("Lỗi khi lưu entity: " + e.getMessage(), e);
         } finally {
-            em.close(); // luôn đóng EM sau khi dùng xong
+            em.close();
         }
     }
 
-    /**
-     * Cập nhật một Entity đã tồn tại trong database.
-     * 
-     * @param entity đối tượng cần cập nhật (phải có ID)
-     * @return entity đã được merge
-     */
+    /** UPDATE entity đã tồn tại trong DB. */
     public T update(T entity) {
         EntityManager em = getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            T merged = em.merge(entity); // merge: cập nhật entity nếu đã tồn tại
+            T merged = em.merge(entity);
             tx.commit();
             return merged;
         } catch (Exception e) {
@@ -75,20 +61,15 @@ public abstract class GenericDAO<T> {
         }
     }
 
-    /**
-     * Xóa một Entity khỏi database theo ID.
-     * 
-     * @param id khóa chính của entity cần xóa
-     */
+    /** DELETE entity theo ID. */
     public void delete(Object id) {
         EntityManager em = getEntityManager();
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            T entity = em.find(entityClass, id); // tìm entity theo ID trước
-            if (entity != null) {
-                em.remove(entity); // xóa entity khỏi DB
-            }
+            T entity = em.find(entityClass, id);
+            if (entity != null)
+                em.remove(entity);
             tx.commit();
         } catch (Exception e) {
             if (tx.isActive())
@@ -99,34 +80,22 @@ public abstract class GenericDAO<T> {
         }
     }
 
-    /**
-     * Tìm một Entity theo ID (khóa chính).
-     * 
-     * @param id khóa chính
-     * @return Optional chứa entity nếu tìm thấy
-     */
+    /** Tìm entity theo khóa chính. */
     public Optional<T> findById(Object id) {
         EntityManager em = getEntityManager();
         try {
-            T entity = em.find(entityClass, id); // em.find trả về null nếu không tìm thấy
-            return Optional.ofNullable(entity);
+            return Optional.ofNullable(em.find(entityClass, id));
         } finally {
             em.close();
         }
     }
 
-    /**
-     * Lấy toàn bộ danh sách Entity trong bảng.
-     * 
-     * @return List<T> danh sách tất cả các bản ghi
-     */
+    /** Lấy toàn bộ entity trong bảng. */
     public List<T> findAll() {
         EntityManager em = getEntityManager();
         try {
-            // Dùng JPQL (HQL): "SELECT t FROM <ClassName> t" để truy vấn tất cả
             String jpql = "SELECT t FROM " + entityClass.getSimpleName() + " t";
-            TypedQuery<T> query = em.createQuery(jpql, entityClass);
-            return query.getResultList();
+            return em.createQuery(jpql, entityClass).getResultList();
         } finally {
             em.close();
         }

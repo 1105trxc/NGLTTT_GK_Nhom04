@@ -1,33 +1,35 @@
-package vn.edu.ute.languagecenter.management.dao;
+package vn.edu.ute.languagecenter.management.repo.jpa;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import vn.edu.ute.languagecenter.management.model.Teacher;
+import vn.edu.ute.languagecenter.management.repo.TeacherRepository;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * TeacherDAO - DAO chuyên biệt cho entity Teacher.
- * Kế thừa GenericDAO để có sẵn CRUD cơ bản,
- * bổ sung thêm các truy vấn HQL đặc thù cho bảng teachers.
+ * JpaTeacherRepository — triển khai TeacherRepository bằng JPA/Hibernate.
+ * Kế thừa GenericDAO để tái sử dụng CRUD, implement interface để Service
+ * chỉ phụ thuộc vào abstraction (Repository pattern).
  */
-public class TeacherDAO extends GenericDAO<Teacher> {
+public class JpaTeacherRepository extends GenericRepository<Teacher>
+        implements TeacherRepository {
 
-    public TeacherDAO() {
+    public JpaTeacherRepository() {
         super(Teacher.class);
     }
 
     /**
      * Tìm tất cả giáo viên theo trạng thái làm việc.
-     * 
+     *
      * @param status trạng thái (Active / Inactive)
      * @return danh sách giáo viên khớp trạng thái
      */
+    @Override
     public List<Teacher> findByStatus(Teacher.ActiveStatus status) {
         EntityManager em = getEntityManager();
         try {
-            // HQL truy vấn giáo viên theo cột status
             String hql = "SELECT t FROM Teacher t WHERE t.status = :status";
             TypedQuery<Teacher> q = em.createQuery(hql, Teacher.class);
             q.setParameter("status", status);
@@ -38,11 +40,12 @@ public class TeacherDAO extends GenericDAO<Teacher> {
     }
 
     /**
-     * Tìm giáo viên theo email (dùng kiểm tra duplicate khi tạo mới).
-     * 
+     * Tìm giáo viên theo email (kiểm tra duplicate khi tạo mới).
+     *
      * @param email địa chỉ email cần tìm
      * @return Optional<Teacher>
      */
+    @Override
     public Optional<Teacher> findByEmail(String email) {
         EntityManager em = getEntityManager();
         try {
@@ -57,15 +60,15 @@ public class TeacherDAO extends GenericDAO<Teacher> {
     }
 
     /**
-     * Tìm giáo viên theo chuyên môn (specialty), không phân biệt hoa thường.
-     * 
+     * Tìm giáo viên theo chuyên môn, không phân biệt hoa thường.
+     *
      * @param specialty ví dụ: "IELTS", "TOEIC"
      * @return danh sách giáo viên có chuyên môn tương ứng
      */
+    @Override
     public List<Teacher> findBySpecialty(String specialty) {
         EntityManager em = getEntityManager();
         try {
-            // LIKE với LOWER để không phân biệt hoa thường
             String hql = "SELECT t FROM Teacher t WHERE LOWER(t.specialty) LIKE LOWER(:sp)";
             TypedQuery<Teacher> q = em.createQuery(hql, Teacher.class);
             q.setParameter("sp", "%" + specialty + "%");
@@ -77,9 +80,10 @@ public class TeacherDAO extends GenericDAO<Teacher> {
 
     /**
      * Lấy tất cả giáo viên Active, sắp xếp theo tên A-Z.
-     * 
+     *
      * @return danh sách giáo viên Active
      */
+    @Override
     public List<Teacher> findAllActive() {
         EntityManager em = getEntityManager();
         try {

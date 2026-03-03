@@ -1,10 +1,10 @@
 package vn.edu.ute.languagecenter.management.service;
 
-import vn.edu.ute.languagecenter.management.dao.StudentDAO;
-import vn.edu.ute.languagecenter.management.dao.TeacherDAO;
-import vn.edu.ute.languagecenter.management.dao.StaffDAO;
-import vn.edu.ute.languagecenter.management.dao.UserAccountDAO;
-import vn.edu.ute.languagecenter.management.dao.NotificationDAO;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaStudentRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaTeacherRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaStaffRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaUserAccountRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaNotificationRepository;
 import vn.edu.ute.languagecenter.management.model.*;
 
 import java.time.LocalDate;
@@ -22,11 +22,11 @@ import java.util.stream.*;
 public class HRQueryService {
 
     // Khai báo các DAO cần dùng
-    private final TeacherDAO teacherDAO = new TeacherDAO();
-    private final StaffDAO staffDAO = new StaffDAO();
-    private final StudentDAO studentDAO = new StudentDAO();
-    private final UserAccountDAO userDAO = new UserAccountDAO();
-    private final NotificationDAO notiDAO = new NotificationDAO();
+    private final JpaTeacherRepository teacherDAO = new JpaTeacherRepository();
+    private final JpaStaffRepository staffDAO = new JpaStaffRepository();
+    private final JpaStudentRepository studentDAO = new JpaStudentRepository();
+    private final JpaUserAccountRepository userDAO = new JpaUserAccountRepository();
+    private final JpaNotificationRepository notiDAO = new JpaNotificationRepository();
 
     // ============================================================
     // QUERY 1: Lọc giáo viên đang Active và dạy môn IELTS
@@ -176,7 +176,7 @@ public class HRQueryService {
      * @return List<Notification> tối đa 5 thông báo phù hợp
      */
     public List<Notification> getRecentNotificationsForUser(UserAccount.UserRole currentUserRole) {
-        List<Notification> allNotifications = notiDAO.findAllRecent(); // lấy tất cả thông báo (mới nhất trước)
+        List<Notification> allNotifications = notiDAO.findRecent(50); // lấy tất cả thông báo (mới nhất trước)
 
         // Chuyển đổi UserRole -> TargetRole để so sánh với cột target_role trong
         // notifications

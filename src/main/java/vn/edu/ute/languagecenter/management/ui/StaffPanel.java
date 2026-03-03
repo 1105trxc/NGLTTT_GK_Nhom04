@@ -1,4 +1,4 @@
-package vn.edu.ute.languagecenter.management.gui.operation;
+package vn.edu.ute.languagecenter.management.ui;
 
 import vn.edu.ute.languagecenter.management.model.Staff;
 import vn.edu.ute.languagecenter.management.service.StaffService;
