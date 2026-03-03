@@ -3,6 +3,7 @@ package vn.edu.ute.languagecenter.management.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,7 +40,7 @@ public class PlacementTest {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public enum SuggestedLevel { Beginner, Intermediate, Advanced }
+    public enum SuggestedLevel {Beginner, Intermediate, Advanced}
 
     @PrePersist
     public void prePersist() {
