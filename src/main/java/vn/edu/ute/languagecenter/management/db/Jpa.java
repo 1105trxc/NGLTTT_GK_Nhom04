@@ -16,7 +16,7 @@ public final class Jpa {
             try {
                 emf = Persistence.createEntityManagerFactory("languageCenterPU");
             } catch (Exception e) {
-                System.err.println("❌ Cannot init EntityManagerFactory");
+                System.err.println("Cannot init EntityManagerFactory");
                 e.printStackTrace();
                 throw e;
             }
