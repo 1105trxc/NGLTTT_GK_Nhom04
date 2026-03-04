@@ -43,3 +43,4 @@ build/
 .PhanChiaCongViec.md
 .gitignore
 .context.md
+.workspace.xml
