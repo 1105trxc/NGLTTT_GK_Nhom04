@@ -31,7 +31,7 @@
                       value="jdbc:mysql://127.0.0.1:3306/mis_language_center?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh"/>
             <property name="jakarta.persistence.jdbc.user" value="root"/>
             <!-- Thay đổi password dưới đây cho đúng với MySQL của bạn -->
-            <property name="jakarta.persistence.jdbc.password" value="25032005"/>
+            <property name="jakarta.persistence.jdbc.password" value="123456"/>
 
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
             <property name="hibernate.show_sql" value="true"/>

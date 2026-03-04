@@ -8,6 +8,7 @@ target/
 .idea/modules.xml
 .idea/jarRepositories.xml
 .idea/compiler.xml
+.idea/workspace.xml
 .idea/libraries/
 *.iws
 *.iml
@@ -43,3 +44,5 @@ build/
 .PhanChiaCongViec.md
 .gitignore
 .context.md
+pom.xml
+src/main/resources/META-INF/persistence.xml

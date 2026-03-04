@@ -6,23 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-<<<<<<< HEAD
       <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" afterDir="false" />
-=======
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/CertificateDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/ClassDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/CourseDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/GenericDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/PlacementTestDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/RoomDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/dao/ScheduleDAO.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/TransactionManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/TransactionManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ClassService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ClassService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/CourseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/CourseService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ExamAndCertService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ExamAndCertService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/RoomService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/RoomService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ScheduleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/service/ScheduleService.java" afterDir="false" />
->>>>>>> khoa
+
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
