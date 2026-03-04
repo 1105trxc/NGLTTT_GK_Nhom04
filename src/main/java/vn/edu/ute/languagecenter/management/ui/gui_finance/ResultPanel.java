@@ -4,6 +4,7 @@ import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Enrollment;
 import vn.edu.ute.languagecenter.management.model.Result;
 import vn.edu.ute.languagecenter.management.model.Student;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
 import vn.edu.ute.languagecenter.management.service.EnrollmentService;
 import vn.edu.ute.languagecenter.management.service.ResultService;
 
@@ -22,9 +23,10 @@ import java.util.stream.Collectors;
 
 public class ResultPanel extends JPanel {
 
-    // ── Services (class trực tiếp, không interface) ───────────────────────────
-    private final ResultService     resultService     = new ResultService();
-    private final EnrollmentService enrollmentService = new EnrollmentService();
+    // ── Services ──────────────────────────────────────────────────────────────
+    private final ResultService      resultService     = new ResultService();
+    private final EnrollmentService  enrollmentService = new EnrollmentService();
+    private final JpaClassRepository classRepo         = new JpaClassRepository();
 
     private JComboBox<Class_> cboClass;
     private JButton           btnLoad;
@@ -33,8 +35,6 @@ public class ResultPanel extends JPanel {
     private JTable            tblResult;
     private DefaultTableModel tableModel;
     private JTextArea         txaStats;
-
-    // Listener tự cập nhật Grade khi nhập điểm — giữ ref để có thể tạm remove
     private TableModelListener gradeAutoCalcListener;
 
     private static final int COL_ID      = 0;
@@ -50,6 +50,22 @@ public class ResultPanel extends JPanel {
         add(buildTopPanel(),   BorderLayout.NORTH);
         add(buildTablePanel(), BorderLayout.CENTER);
         add(buildStatsPanel(), BorderLayout.EAST);
+
+        // Tự load danh sách lớp ngay khi khởi tạo
+        refreshClassCombo();
+    }
+
+    // ── Tự load Class vào ComboBox ────────────────────────────────────────────
+    private void refreshClassCombo() {
+        try {
+            List<Class_> classes = classRepo.findAll();
+            cboClass.removeAllItems();
+            classes.forEach(cboClass::addItem);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Không load được danh sách lớp: " + ex.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private JPanel buildTopPanel() {
@@ -61,23 +77,33 @@ public class ResultPanel extends JPanel {
             new Font("Arial", Font.BOLD, 13), new Color(75, 0, 130)));
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(6, 8, 6, 8); g.fill = GridBagConstraints.HORIZONTAL;
+        g.insets = new Insets(6, 8, 6, 8);
+        g.fill   = GridBagConstraints.HORIZONTAL;
 
-        g.gridx = 0; g.gridy = 0; g.weightx = 0; pnl.add(new JLabel("Lớp học:"), g);
-        cboClass = new JComboBox<>(); cboClass.setPreferredSize(new Dimension(250, 28));
-        g.gridx = 1; g.weightx = 1; pnl.add(cboClass, g);
+        g.gridx = 0; g.gridy = 0; g.weightx = 0;
+        pnl.add(new JLabel("Lớp học:"), g);
+        cboClass = new JComboBox<>();
+        cboClass.setPreferredSize(new Dimension(250, 28));
+        g.gridx = 1; g.weightx = 1;
+        pnl.add(cboClass, g);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
         btnLoad        = makeButton("📋 Tải Danh Sách",   new Color(70, 130, 180));
         btnSaveAll     = makeButton("💾 Lưu Tất Cả Điểm", new Color(46, 139, 87));
         btnExportStats = makeButton("📊 Xem Thống Kê",    new Color(106, 90, 205));
-        btnPanel.add(btnLoad); btnPanel.add(btnSaveAll); btnPanel.add(btnExportStats);
-        g.gridx = 0; g.gridy = 1; g.gridwidth = 3; g.weightx = 1; pnl.add(btnPanel, g);
+        JButton btnRefresh = makeButton("🔄 Làm Mới",     new Color(128, 128, 128));
+        btnPanel.add(btnLoad);
+        btnPanel.add(btnSaveAll);
+        btnPanel.add(btnExportStats);
+        btnPanel.add(btnRefresh);
+        g.gridx = 0; g.gridy = 1; g.gridwidth = 3; g.weightx = 1;
+        pnl.add(btnPanel, g);
 
         btnLoad.addActionListener(e -> loadResultTable());
         btnSaveAll.addActionListener(e -> saveAllResults());
         btnExportStats.addActionListener(e -> refreshStats());
+        btnRefresh.addActionListener(e -> refreshClassCombo());
         return pnl;
     }
 
@@ -100,7 +126,6 @@ public class ResultPanel extends JPanel {
         tblResult.getTableHeader().setForeground(Color.WHITE);
         tblResult.setSelectionBackground(new Color(230, 220, 255));
 
-        // Ẩn cột ID
         tblResult.getColumnModel().getColumn(COL_ID).setMinWidth(0);
         tblResult.getColumnModel().getColumn(COL_ID).setMaxWidth(0);
 
@@ -126,7 +151,7 @@ public class ResultPanel extends JPanel {
                 }
             });
 
-        // Listener: khi score thay đổi → tự tính Grade (tránh vòng lặp bằng flag)
+        // Listener tự tính grade khi nhập điểm — dùng flag chống vòng lặp
         gradeAutoCalcListener = new TableModelListener() {
             private boolean updating = false;
             @Override
@@ -137,8 +162,7 @@ public class ResultPanel extends JPanel {
                 Object val = tableModel.getValueAt(row, COL_SCORE);
                 if (val == null || val.toString().isBlank()) return;
                 try {
-                    BigDecimal score = new BigDecimal(val.toString());
-                    String grade = resultService.calculateGrade(score);
+                    String grade = resultService.calculateGrade(new BigDecimal(val.toString()));
                     updating = true;
                     tableModel.setValueAt(grade, row, COL_GRADE);
                     updating = false;
@@ -173,9 +197,7 @@ public class ResultPanel extends JPanel {
         return pnl;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Business logic
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Business logic ────────────────────────────────────────────────────────
     private void loadResultTable() {
         Class_ cls = (Class_) cboClass.getSelectedItem();
         if (cls == null) {
@@ -185,7 +207,6 @@ public class ResultPanel extends JPanel {
         }
         tableModel.setRowCount(0);
         try {
-            // Lambda: lấy học viên Enrolled/Completed → sort tên
             List<Student> students = enrollmentService.findByClass(cls).stream()
                 .filter(e -> e.getStatus() == Enrollment.EnrollmentStatus.Enrolled
                           || e.getStatus() == Enrollment.EnrollmentStatus.Completed)
@@ -193,7 +214,6 @@ public class ResultPanel extends JPanel {
                 .sorted(Comparator.comparing(Student::getFullName))
                 .collect(Collectors.toList());
 
-            // Lambda: index result đã có theo studentId
             Map<Long, Result> existingResults = resultService.findByClass(cls).stream()
                 .collect(Collectors.toMap(
                     r -> r.getStudent().getStudentId(), r -> r));
@@ -244,7 +264,6 @@ public class ResultPanel extends JPanel {
         }
 
         try {
-            // Gọi ResultService.saveResultsForClass() — upsert hàng loạt
             List<Result> saved = resultService.saveResultsForClass(cls, scores, comments);
             JOptionPane.showMessageDialog(this,
                 "Đã lưu điểm cho " + saved.size() + " học viên.",
@@ -261,29 +280,26 @@ public class ResultPanel extends JPanel {
         Class_ cls = (Class_) cboClass.getSelectedItem();
         if (cls == null) return;
         try {
-            // Lambda: groupingBy grade + counting (từ ResultService)
             Map<String, Long> gradeCount = resultService.countByGrade(cls);
             OptionalDouble    avg        = resultService.averageScore(cls);
 
             StringBuilder sb = new StringBuilder();
             sb.append("📊 THỐNG KÊ LỚP\n─────────────────\n");
-
-            List.of("A+","A","B+","B","C+","C","D","F","N/A").forEach(gr -> {
+            List.of("A+", "A", "B+", "B", "C+", "C", "D", "F", "N/A").forEach(gr -> {
                 long count = gradeCount.getOrDefault(gr, 0L);
                 if (count > 0) sb.append(String.format("%-4s : %d học viên\n", gr, count));
             });
-
             long total = gradeCount.values().stream().mapToLong(Long::longValue).sum();
             sb.append("─────────────────\n");
             sb.append(String.format("Tổng  : %d\n", total));
             if (avg.isPresent()) sb.append(String.format("Avg   : %.2f\n", avg.getAsDouble()));
-
             txaStats.setText(sb.toString());
         } catch (Exception ex) {
             txaStats.setText("Lỗi: " + ex.getMessage());
         }
     }
 
+    /** Setter để cha override nếu cần */
     public void setClasses(List<Class_> classes) {
         cboClass.removeAllItems();
         classes.forEach(cboClass::addItem);
@@ -292,7 +308,8 @@ public class ResultPanel extends JPanel {
     private static JButton makeButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setBackground(bg); btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false); btn.setFont(new Font("Arial", Font.BOLD, 12));
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Arial", Font.BOLD, 12));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
         return btn;
@@ -302,8 +319,10 @@ public class ResultPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Preview – ResultPanel");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setSize(900, 600); f.add(new ResultPanel());
-            f.setLocationRelativeTo(null); f.setVisible(true);
+            f.setSize(900, 600);
+            f.add(new ResultPanel());
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
         });
     }
 }

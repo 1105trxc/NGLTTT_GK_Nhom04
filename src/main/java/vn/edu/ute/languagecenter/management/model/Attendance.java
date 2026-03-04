@@ -3,6 +3,7 @@ package vn.edu.ute.languagecenter.management.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -10,12 +11,12 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(
-    name = "attendances",
-    // Thêm mới: CONSTRAINT uq_attendances UNIQUE (student_id, class_id, attend_date)
-    uniqueConstraints = @UniqueConstraint(
-        name = "uq_attendances",
-        columnNames = {"student_id", "class_id", "attend_date"}
-    )
+        name = "attendances",
+        // Thêm mới: CONSTRAINT uq_attendances UNIQUE (student_id, class_id, attend_date)
+        uniqueConstraints = @UniqueConstraint(
+                name = "uq_attendances",
+                columnNames = {"student_id", "class_id", "attend_date"}
+        )
 )
 public class Attendance {
 
@@ -45,5 +46,12 @@ public class Attendance {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public enum AttendanceStatus { Present, Absent, Late }
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = java.time.LocalDateTime.now();
+        }
+    }
+    public enum AttendanceStatus {Present, Absent, Late}
+
 }

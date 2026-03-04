@@ -7,9 +7,11 @@ import vn.edu.ute.languagecenter.management.model.Promotion;
 import vn.edu.ute.languagecenter.management.model.Student;
 import vn.edu.ute.languagecenter.management.repo.PaymentRepository;
 import vn.edu.ute.languagecenter.management.repo.PromotionRepository;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
 import vn.edu.ute.languagecenter.management.repo.jpa.JpaPaymentRepository;
 import vn.edu.ute.languagecenter.management.repo.jpa.JpaPromotionRepository;
 import vn.edu.ute.languagecenter.management.service.InvoiceService;
+import vn.edu.ute.languagecenter.management.service.StudentService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -22,9 +24,10 @@ import java.util.List;
 
 public class InvoicePaymentPanel extends JPanel {
 
-    // ── Service + Repo (PromotionService & PaymentService không còn tồn tại
-    //    → dùng trực tiếp InvoiceService + Repo tương ứng) ───────────────────
+    // ── Services / Repos ──────────────────────────────────────────────────────
     private final InvoiceService      invoiceService = new InvoiceService();
+    private final StudentService      studentService = new StudentService();
+    private final JpaClassRepository  classRepo      = new JpaClassRepository();
     private final PaymentRepository   paymentRepo    = new JpaPaymentRepository();
     private final PromotionRepository promotionRepo  = new JpaPromotionRepository();
 
@@ -58,8 +61,34 @@ public class InvoicePaymentPanel extends JPanel {
         add(buildCreatePanel(),  BorderLayout.NORTH);
         add(buildInvoiceTable(), BorderLayout.CENTER);
         add(buildPaymentPanel(), BorderLayout.EAST);
-        loadPromotions();
+
+        // Tự load dữ liệu khi khởi tạo
+        refreshComboData();
         loadInvoiceTable();
+    }
+
+    // ── Tự load Student, Class, Promotion ────────────────────────────────────
+    private void refreshComboData() {
+        try {
+            List<Student> students = studentService.getActiveStudents();
+            cboStudent.removeAllItems();
+            students.forEach(cboStudent::addItem);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Không load được danh sách học viên: " + ex.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+        try {
+            List<Class_> classes = classRepo.findAll();
+            cboClass.removeAllItems();
+            classes.forEach(cboClass::addItem);
+            recalcPreview();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                "Không load được danh sách lớp: " + ex.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+        loadPromotions();
     }
 
     private JPanel buildCreatePanel() {
@@ -76,36 +105,48 @@ public class InvoicePaymentPanel extends JPanel {
         int row  = 0;
 
         addLabel(pnl, "Học viên:", g, 0, row);
-        cboStudent = new JComboBox<>(); cboStudent.setPreferredSize(new Dimension(200, 28));
+        cboStudent = new JComboBox<>();
+        cboStudent.setPreferredSize(new Dimension(200, 28));
         addComp(pnl, cboStudent, g, 1, row++);
 
         addLabel(pnl, "Lớp học:", g, 0, row);
-        cboClass = new JComboBox<>(); cboClass.setPreferredSize(new Dimension(200, 28));
+        cboClass = new JComboBox<>();
+        cboClass.setPreferredSize(new Dimension(200, 28));
         addComp(pnl, cboClass, g, 1, row++);
 
         addLabel(pnl, "Khuyến mãi:", g, 0, row);
-        cboPromotion = new JComboBox<>(); cboPromotion.setPreferredSize(new Dimension(200, 28));
+        cboPromotion = new JComboBox<>();
+        cboPromotion.setPreferredSize(new Dimension(200, 28));
         addComp(pnl, cboPromotion, g, 1, row++);
 
-        // Preview tính tiền
         addLabel(pnl, "Học phí gốc:", g, 2, 0);
-        lblOriginalFee = makeValueLabel("0 VND"); addComp(pnl, lblOriginalFee, g, 3, 0);
+        lblOriginalFee = makeValueLabel("0 VND");
+        addComp(pnl, lblOriginalFee, g, 3, 0);
 
         addLabel(pnl, "Giảm giá:", g, 2, 1);
         lblDiscount = makeValueLabel("0 VND");
-        lblDiscount.setForeground(new Color(178, 34, 34)); addComp(pnl, lblDiscount, g, 3, 1);
+        lblDiscount.setForeground(new Color(178, 34, 34));
+        addComp(pnl, lblDiscount, g, 3, 1);
 
         addLabel(pnl, "Tổng tiền:", g, 2, 2);
         lblTotal = makeValueLabel("0 VND");
         lblTotal.setFont(new Font("Arial", Font.BOLD, 14));
-        lblTotal.setForeground(new Color(0, 128, 0)); addComp(pnl, lblTotal, g, 3, 2);
+        lblTotal.setForeground(new Color(0, 128, 0));
+        addComp(pnl, lblTotal, g, 3, 2);
 
+        JPanel btnRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        btnRow.setOpaque(false);
         btnCreateInvoice = makeButton("🧾 Tạo Hóa Đơn", new Color(218, 165, 32));
-        g.gridx = 0; g.gridy = row; g.gridwidth = 4; pnl.add(btnCreateInvoice, g);
+        JButton btnRefresh = makeButton("🔄 Làm Mới", new Color(128, 128, 128));
+        btnRow.add(btnCreateInvoice);
+        btnRow.add(btnRefresh);
+        g.gridx = 0; g.gridy = row; g.gridwidth = 4;
+        pnl.add(btnRow, g);
 
         cboClass.addActionListener(e -> recalcPreview());
         cboPromotion.addActionListener(e -> recalcPreview());
         btnCreateInvoice.addActionListener(e -> handleCreateInvoice());
+        btnRefresh.addActionListener(e -> refreshComboData());
         return pnl;
     }
 
@@ -118,7 +159,9 @@ public class InvoicePaymentPanel extends JPanel {
         JComboBox<String> cboFilter = new JComboBox<>(
             new String[]{"Tất cả", "Issued", "Paid", "Draft", "Cancelled"});
         JButton btnFilter = makeButton("Lọc", new Color(70, 130, 180));
-        bar.add(new JLabel("Lọc:")); bar.add(cboFilter); bar.add(btnFilter);
+        bar.add(new JLabel("Lọc trạng thái:"));
+        bar.add(cboFilter);
+        bar.add(btnFilter);
         pnl.add(bar, BorderLayout.NORTH);
 
         String[] cols = {"ID", "Học Viên", "Tổng Tiền (VND)", "Ngày Lập", "Trạng Thái", "Ghi Chú"};
@@ -134,7 +177,8 @@ public class InvoicePaymentPanel extends JPanel {
         tblInvoice.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) refreshPaymentPanel();
         });
-        btnFilter.addActionListener(e -> loadInvoiceTable((String) cboFilter.getSelectedItem()));
+        btnFilter.addActionListener(e ->
+            loadInvoiceTable((String) cboFilter.getSelectedItem()));
         return pnl;
     }
 
@@ -148,57 +192,66 @@ public class InvoicePaymentPanel extends JPanel {
             new Font("Arial", Font.BOLD, 13), new Color(0, 100, 0)));
 
         GridBagConstraints g = new GridBagConstraints();
-        g.insets = new Insets(5, 8, 5, 8); g.fill = GridBagConstraints.HORIZONTAL;
+        g.insets = new Insets(5, 8, 5, 8);
+        g.fill   = GridBagConstraints.HORIZONTAL;
         g.weightx = 1;
         int row = 0;
 
         lblInvoiceDetail = new JLabel("<html><i>Chưa chọn hóa đơn</i></html>");
         lblInvoiceDetail.setFont(new Font("Arial", Font.PLAIN, 12));
-        g.gridx = 0; g.gridy = row++; g.gridwidth = 2; pnl.add(lblInvoiceDetail, g);
+        g.gridx = 0; g.gridy = row++; g.gridwidth = 2;
+        pnl.add(lblInvoiceDetail, g);
         g.gridwidth = 1;
 
         addLabel(pnl, "Đã thanh toán:", g, 0, row);
-        lblPaidSoFar = makeValueLabel("0 VND"); addComp(pnl, lblPaidSoFar, g, 1, row++);
+        lblPaidSoFar = makeValueLabel("0 VND");
+        addComp(pnl, lblPaidSoFar, g, 1, row++);
 
         addLabel(pnl, "Còn lại:", g, 0, row);
         lblRemaining = makeValueLabel("0 VND");
-        lblRemaining.setForeground(new Color(178, 34, 34)); addComp(pnl, lblRemaining, g, 1, row++);
+        lblRemaining.setForeground(new Color(178, 34, 34));
+        addComp(pnl, lblRemaining, g, 1, row++);
 
-        g.gridx = 0; g.gridy = row++; g.gridwidth = 2; pnl.add(new JSeparator(), g);
+        g.gridx = 0; g.gridy = row++; g.gridwidth = 2;
+        pnl.add(new JSeparator(), g);
         g.gridwidth = 1;
 
         addLabel(pnl, "Số tiền (VND):", g, 0, row);
-        txtAmount = new JTextField("0"); addComp(pnl, txtAmount, g, 1, row++);
+        txtAmount = new JTextField("0");
+        addComp(pnl, txtAmount, g, 1, row++);
 
         addLabel(pnl, "Phương thức:", g, 0, row);
-        cboMethod = new JComboBox<>(new String[]{"Cash","Bank","Momo","ZaloPay","Card","Other"});
+        cboMethod = new JComboBox<>(
+            new String[]{"Cash", "Bank", "Momo", "ZaloPay", "Card", "Other"});
         addComp(pnl, cboMethod, g, 1, row++);
 
         addLabel(pnl, "Mã tham chiếu:", g, 0, row);
-        txtRef = new JTextField(); addComp(pnl, txtRef, g, 1, row++);
+        txtRef = new JTextField();
+        addComp(pnl, txtRef, g, 1, row++);
 
         btnPay = makeButton("💳 Xác Nhận Thanh Toán", new Color(46, 139, 87));
-        g.gridx = 0; g.gridy = row++; g.gridwidth = 2; pnl.add(btnPay, g);
+        g.gridx = 0; g.gridy = row++; g.gridwidth = 2;
+        pnl.add(btnPay, g);
 
         btnMarkPaid = makeButton("✅ Đánh Dấu Đã Thanh Toán Đủ", new Color(25, 25, 112));
-        g.gridy = row++; pnl.add(btnMarkPaid, g);
+        g.gridy = row++;
+        pnl.add(btnMarkPaid, g);
 
         btnPay.addActionListener(e -> handlePayment());
         btnMarkPaid.addActionListener(e -> handleMarkPaid());
         return pnl;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Business logic
-    // ─────────────────────────────────────────────────────────────────────────
+    // ── Business logic ────────────────────────────────────────────────────────
     private void recalcPreview() {
         Class_    c = (Class_) cboClass.getSelectedItem();
         Promotion p = (Promotion) cboPromotion.getSelectedItem();
         if (c == null || c.getCourse() == null) {
-            lblOriginalFee.setText("0 VND"); lblDiscount.setText("0 VND"); lblTotal.setText("0 VND");
+            lblOriginalFee.setText("0 VND");
+            lblDiscount.setText("0 VND");
+            lblTotal.setText("0 VND");
             return;
         }
-        // Gọi InvoiceService.calculateTotal() — không cần tạo Invoice
         BigDecimal fee   = c.getCourse().getFee();
         BigDecimal total = invoiceService.calculateTotal(fee, p);
         lblOriginalFee.setText(formatVND(fee));
@@ -239,7 +292,6 @@ public class InvoicePaymentPanel extends JPanel {
         invoiceService.findById(invoiceId).ifPresent(inv -> {
             try {
                 BigDecimal amount = new BigDecimal(txtAmount.getText().trim());
-                // Tạo Payment trực tiếp qua PaymentRepository
                 Payment payment = new Payment();
                 payment.setStudent(inv.getStudent());
                 payment.setInvoice(inv);
@@ -251,7 +303,6 @@ public class InvoicePaymentPanel extends JPanel {
                 String ref = txtRef.getText().trim();
                 payment.setReferenceCode(ref.isEmpty() ? null : ref);
                 paymentRepo.save(payment);
-
                 JOptionPane.showMessageDialog(this,
                     "Đã ghi nhận thanh toán " + formatVND(amount) + ".",
                     "Thanh toán", JOptionPane.INFORMATION_MESSAGE);
@@ -272,7 +323,6 @@ public class InvoicePaymentPanel extends JPanel {
         if (row < 0) return;
         Long invoiceId = (Long) invoiceModel.getValueAt(row, 0);
         try {
-            // InvoiceService.markAsPaid() tự kiểm tra tổng payment >= totalAmount
             invoiceService.markAsPaid(invoiceId);
             loadInvoiceTable();
             JOptionPane.showMessageDialog(this,
@@ -309,14 +359,14 @@ public class InvoicePaymentPanel extends JPanel {
         int row = tblInvoice.getSelectedRow();
         if (row < 0) {
             lblInvoiceDetail.setText("<html><i>Chưa chọn hóa đơn</i></html>");
-            lblPaidSoFar.setText("0 VND"); lblRemaining.setText("0 VND");
+            lblPaidSoFar.setText("0 VND");
+            lblRemaining.setText("0 VND");
             return;
         }
         Long invoiceId = (Long) invoiceModel.getValueAt(row, 0);
         String hv    = (String) invoiceModel.getValueAt(row, 1);
         String total = (String) invoiceModel.getValueAt(row, 2);
         lblInvoiceDetail.setText("<html><b>" + hv + "</b><br/>Tổng: " + total + "</html>");
-
         invoiceService.findById(invoiceId).ifPresent(inv -> {
             BigDecimal paid = paymentRepo.sumAmountByInvoice(inv);
             BigDecimal rem  = inv.getTotalAmount().subtract(paid).max(BigDecimal.ZERO);
@@ -327,17 +377,21 @@ public class InvoicePaymentPanel extends JPanel {
 
     private void loadPromotions() {
         cboPromotion.removeAllItems();
-        cboPromotion.addItem(null); // null = không áp dụng khuyến mãi
+        cboPromotion.addItem(null);
         try { promotionRepo.findAllActive().forEach(cboPromotion::addItem); }
         catch (Exception ignored) {}
     }
 
+    /** Setters để cha override nếu cần */
     public void setStudents(List<Student> students) {
-        cboStudent.removeAllItems(); students.forEach(cboStudent::addItem);
+        cboStudent.removeAllItems();
+        students.forEach(cboStudent::addItem);
     }
 
     public void setClasses(List<Class_> classes) {
-        cboClass.removeAllItems(); classes.forEach(cboClass::addItem); recalcPreview();
+        cboClass.removeAllItems();
+        classes.forEach(cboClass::addItem);
+        recalcPreview();
     }
 
     private String formatVND(BigDecimal val) {
@@ -345,7 +399,8 @@ public class InvoicePaymentPanel extends JPanel {
     }
 
     private static void styleTable(JTable t) {
-        t.setRowHeight(24); t.setFont(new Font("Arial", Font.PLAIN, 12));
+        t.setRowHeight(24);
+        t.setFont(new Font("Arial", Font.PLAIN, 12));
         t.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
         t.getTableHeader().setBackground(new Color(218, 165, 32));
         t.getTableHeader().setForeground(Color.WHITE);
@@ -361,13 +416,16 @@ public class InvoicePaymentPanel extends JPanel {
     }
 
     private static JLabel makeValueLabel(String text) {
-        JLabel l = new JLabel(text); l.setFont(new Font("Arial", Font.PLAIN, 12)); return l;
+        JLabel l = new JLabel(text);
+        l.setFont(new Font("Arial", Font.PLAIN, 12));
+        return l;
     }
 
     private static JButton makeButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setBackground(bg); btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false); btn.setFont(new Font("Arial", Font.BOLD, 12));
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Arial", Font.BOLD, 12));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
         return btn;
@@ -377,8 +435,10 @@ public class InvoicePaymentPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Preview – InvoicePaymentPanel");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setSize(1100, 650); f.add(new InvoicePaymentPanel());
-            f.setLocationRelativeTo(null); f.setVisible(true);
+            f.setSize(1100, 650);
+            f.add(new InvoicePaymentPanel());
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
         });
     }
 }

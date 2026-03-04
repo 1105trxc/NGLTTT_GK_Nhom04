@@ -8,8 +8,6 @@ public final class Jpa {
 
     private static EntityManagerFactory emf;
 
-    private static final EntityManagerFactory EMF = Persistence.createEntityManagerFactory("LanguageCenterPU");
-
     private Jpa() {
     }
 

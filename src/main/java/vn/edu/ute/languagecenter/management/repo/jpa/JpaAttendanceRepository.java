@@ -5,6 +5,7 @@ import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Student;
 import vn.edu.ute.languagecenter.management.db.TransactionManager;
 import vn.edu.ute.languagecenter.management.repo.AttendanceRepository;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -34,8 +35,8 @@ public class JpaAttendanceRepository implements AttendanceRepository {
         try {
             return tm.runInTransaction(em -> {
                 list.forEach(a -> {
-                    if (a.getAttendanceId() == null) em.persist(a);
-                    else em.merge(a);
+                    // Chỉ cần dùng merge. Hibernate sẽ tự lo việc Insert hay Update
+                    em.merge(a);
                 });
                 return list;
             });

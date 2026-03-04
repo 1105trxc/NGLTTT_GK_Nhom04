@@ -50,5 +50,13 @@ public class Invoice {
     @OneToMany(mappedBy = "invoice", fetch = FetchType.LAZY)
     private List<Payment> payments;
 
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null || this.updatedAt == null) {
+            this.createdAt = java.time.LocalDateTime.now();
+            this.updatedAt = java.time.LocalDateTime.now();
+        }
+    }
+
     public enum InvoiceStatus { Draft, Issued, Paid, Cancelled }
 }
