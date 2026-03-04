@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -39,13 +38,15 @@ public class Promotion {
     @Column(name = "status", nullable = false)
     private ActiveStatus status = ActiveStatus.Active;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     // Relations
     @OneToMany(mappedBy = "promotion", fetch = FetchType.LAZY)
     private List<Invoice> invoices;
 
-    public enum DiscountType { Percent, Amount }
-    public enum ActiveStatus { Active, Inactive }
+    public enum DiscountType {
+        Percent, Amount
+    }
+
+    public enum ActiveStatus {
+        Active, Inactive
+    }
 }

@@ -9,7 +9,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "attendances")
+@Table(
+    name = "attendances",
+    // Thêm mới: CONSTRAINT uq_attendances UNIQUE (student_id, class_id, attend_date)
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_attendances",
+        columnNames = {"student_id", "class_id", "attend_date"}
+    )
+)
 public class Attendance {
 
     @Id
