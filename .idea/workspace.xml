@@ -5,17 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="Merge branch 'merge/di-khoa-lam' of https://github.com/1105trxc/NGLTTT_GK_Nhom04 into merge/di-khoa-lam&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;src/main/resources/META-INF/persistence.xml">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/App.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/App.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/db/Jpa.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/persistence.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/persistence.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/AttendancePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/AttendancePanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/ResultPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/ResultPanel.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="EmbeddingIndexingInfo">
+    <option name="cachedIndexableFilesCount" value="102" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -27,10 +27,16 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Lamnguyen030405"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Lamnguyen030405&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/1105trxc/NGLTTT_GK_Nhom04.git",
+    "accountId": "f781ef89-8a9c-4cd6-85b8-b85d95f75425"
   }
 }]]></component>
   <component name="McpProjectServerCommands">
@@ -53,11 +59,12 @@
     "Application.InvoicePaymentPanel.executor": "Run",
     "Application.ResultPanel.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "Merging merge/di-khoa-lam",
+    "git-widget-placeholder": "lam",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/vn/edu/ute/languagecenter/management/db",
     "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java",
@@ -73,7 +80,7 @@
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04\src\main\resources" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.EnrollmentPanel">
+  <component name="RunManager" selected="Application.InvoicePaymentPanel">
     <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="17" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -143,10 +150,10 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.EnrollmentPanel" />
-        <item itemvalue="Application.ResultPanel" />
-        <item itemvalue="Application.AttendancePanel" />
         <item itemvalue="Application.InvoicePaymentPanel" />
+        <item itemvalue="Application.ResultPanel" />
+        <item itemvalue="Application.EnrollmentPanel" />
+        <item itemvalue="Application.AttendancePanel" />
         <item itemvalue="Application.App" />
       </list>
     </recent_temporary>

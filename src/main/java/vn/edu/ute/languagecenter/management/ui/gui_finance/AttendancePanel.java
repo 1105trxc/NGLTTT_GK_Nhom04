@@ -4,8 +4,8 @@ import vn.edu.ute.languagecenter.management.model.Attendance;
 import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Enrollment;
 import vn.edu.ute.languagecenter.management.model.Student;
-import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
 import vn.edu.ute.languagecenter.management.service.AttendanceService;
+import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.EnrollmentService;
 
 import javax.swing.*;
@@ -24,7 +24,7 @@ public class AttendancePanel extends JPanel {
     // ── Services ──────────────────────────────────────────────────────────────
     private final AttendanceService attendanceService = new AttendanceService();
     private final EnrollmentService enrollmentService = new EnrollmentService();
-    private final JpaClassRepository classRepo = new JpaClassRepository();
+    private final ClassService classService = new ClassService();
 
     private JComboBox<Class_> cboClass;
     private JSpinner spnDate;
@@ -33,13 +33,15 @@ public class AttendancePanel extends JPanel {
     private JLabel lblSummary;
     private JTable tblAttendance;
     private DefaultTableModel tableModel;
+    private Long currentTeacherId;
 
     private static final int COL_ID = 0;
     private static final int COL_NAME = 1;
     private static final int COL_STATUS = 2;
     private static final int COL_NOTE = 3;
 
-    public AttendancePanel() {
+    public AttendancePanel(Long teacherId) {
+        this.currentTeacherId = teacherId;
         setLayout(new BorderLayout(10, 10));
         setBorder(new EmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
@@ -54,7 +56,17 @@ public class AttendancePanel extends JPanel {
     // ── Tự load Class vào ComboBox ────────────────────────────────────────────
     private void refreshClassCombo() {
         try {
-            List<Class_> classes = classRepo.findAll();
+            List<Class_> classes;
+
+            // Nếu có ID giáo viên, lọc lớp theo giáo viên đó
+            if (currentTeacherId != null) {
+                classes = classService.findByTeacherId(currentTeacherId);
+            }
+            // Ngược lại (ví dụ Admin/Staff đăng nhập), load tất cả lớp
+            else {
+                classes = classService.findAll();
+            }
+
             cboClass.removeAllItems();
             classes.forEach(cboClass::addItem);
         } catch (Exception ex) {
@@ -314,7 +326,7 @@ public class AttendancePanel extends JPanel {
             JFrame f = new JFrame("Preview – AttendancePanel");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             f.setSize(800, 550);
-            f.add(new AttendancePanel());
+            f.add(new AttendancePanel(1L));
             f.setLocationRelativeTo(null);
             f.setVisible(true);
         });
