@@ -5,6 +5,7 @@ import vn.edu.ute.languagecenter.management.model.Branch;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
@@ -51,6 +52,12 @@ public class BranchPanel extends JPanel {
         sp.setOpaque(false);
         txtSearch = new JTextField(18);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearch.setBackground(Color.WHITE);
+        txtSearch.setForeground(new Color(30, 30, 30));
+        txtSearch.setCaretColor(COLOR_PRIMARY);
+        txtSearch.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 190, 210), 1),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
         JButton btnSearch = new JButton("🔍 Tìm");
         JButton btnRefresh = new JButton("↻ Làm mới");
         styleBtn(btnSearch, COLOR_PRIMARY);
@@ -78,8 +85,19 @@ public class BranchPanel extends JPanel {
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setRowHeight(30);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        table.getTableHeader().setBackground(COLOR_PRIMARY);
-        table.getTableHeader().setForeground(Color.WHITE);
+        table.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setBackground(COLOR_PRIMARY);
+                setForeground(Color.WHITE);
+                setFont(new Font("Segoe UI", Font.BOLD, 12));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 2, 1, new Color(20, 55, 100)));
+                setOpaque(true);
+                return this;
+            }
+        });
         table.setSelectionBackground(new Color(200, 220, 245));
         table.setGridColor(new Color(220, 225, 235));
         table.getColumnModel().getColumn(0).setMinWidth(0);
@@ -254,6 +272,12 @@ public class BranchPanel extends JPanel {
         f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         f.setAlignmentX(Component.LEFT_ALIGNMENT);
+        f.setBackground(Color.WHITE);
+        f.setForeground(new Color(30, 30, 30));
+        f.setCaretColor(new Color(30, 78, 128));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 190, 210), 1),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
         p.add(f);
         p.add(Box.createVerticalStrut(10));
         return f;
@@ -271,6 +295,7 @@ public class BranchPanel extends JPanel {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
+        btn.setOpaque(true);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

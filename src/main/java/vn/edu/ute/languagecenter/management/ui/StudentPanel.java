@@ -5,6 +5,7 @@ import vn.edu.ute.languagecenter.management.service.StudentService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
@@ -82,8 +83,19 @@ public class StudentPanel extends JPanel {
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setRowHeight(30);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
-        table.getTableHeader().setBackground(COLOR_PRIMARY);
-        table.getTableHeader().setForeground(Color.WHITE);
+        table.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setBackground(COLOR_PRIMARY);
+                setForeground(Color.WHITE);
+                setFont(new Font("Segoe UI", Font.BOLD, 12));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 2, 1, new Color(20, 55, 100)));
+                setOpaque(true);
+                return this;
+            }
+        });
         table.setSelectionBackground(new Color(200, 220, 245));
         table.setGridColor(new Color(220, 225, 235));
         table.getColumnModel().getColumn(0).setMinWidth(0);
@@ -194,16 +206,19 @@ public class StudentPanel extends JPanel {
     private void fillForm() {
         int row = table.getSelectedRow();
         selectedStudentId = (Long) tableModel.getValueAt(row, 0);
-        txtName.setText(String.valueOf(tableModel.getValueAt(row, 1)));
-        txtDob.setText(String.valueOf(tableModel.getValueAt(row, 2)));
-        Object g = tableModel.getValueAt(row, 3);
-        if (g instanceof Student.Gender)
-            cmbGender.setSelectedItem(g);
-        txtPhone.setText(String.valueOf(tableModel.getValueAt(row, 4)));
-        txtEmail.setText(String.valueOf(tableModel.getValueAt(row, 5)));
-        Object sv = tableModel.getValueAt(row, 7);
-        if (sv instanceof Student.ActiveStatus)
-            cmbStatus.setSelectedItem(sv);
+        // Fetch full student from service to get all fields including address
+        studentService.getStudentById(selectedStudentId).ifPresent(s -> {
+            txtName.setText(s.getFullName() != null ? s.getFullName() : "");
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            txtDob.setText(s.getDateOfBirth() != null ? s.getDateOfBirth().format(fmt) : "");
+            txtPhone.setText(s.getPhone() != null ? s.getPhone() : "");
+            txtEmail.setText(s.getEmail() != null ? s.getEmail() : "");
+            txtAddress.setText(s.getAddress() != null ? s.getAddress() : "");
+            if (s.getGender() != null)
+                cmbGender.setSelectedItem(s.getGender());
+            if (s.getStatus() != null)
+                cmbStatus.setSelectedItem(s.getStatus());
+        });
     }
 
     private void addStudent() {
@@ -240,7 +255,7 @@ public class StudentPanel extends JPanel {
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy học viên!"));
             s.setFullName(txtName.getText().trim());
             if (!txtDob.getText().trim().isEmpty())
-                s.setDateOfBirth(LocalDate.parse(txtDob.getText().trim()));
+                s.setDateOfBirth(parseDate(txtDob.getText().trim()));
             s.setPhone(txtPhone.getText().trim().isEmpty() ? null : txtPhone.getText().trim());
             s.setEmail(txtEmail.getText().trim().isEmpty() ? null : txtEmail.getText().trim());
             s.setAddress(txtAddress.getText().trim().isEmpty() ? null : txtAddress.getText().trim());
@@ -290,6 +305,12 @@ public class StudentPanel extends JPanel {
         f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         f.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
         f.setAlignmentX(Component.LEFT_ALIGNMENT);
+        f.setBackground(Color.WHITE);
+        f.setForeground(new Color(30, 30, 30));
+        f.setCaretColor(new Color(30, 78, 128));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(180, 190, 210), 1),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
         p.add(f);
         p.add(Box.createVerticalStrut(10));
         return f;
@@ -307,6 +328,7 @@ public class StudentPanel extends JPanel {
         btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
+        btn.setOpaque(true);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

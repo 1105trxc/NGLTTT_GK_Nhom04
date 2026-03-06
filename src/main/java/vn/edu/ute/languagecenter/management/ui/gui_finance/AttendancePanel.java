@@ -139,7 +139,7 @@ public class AttendancePanel extends JPanel {
         JPanel pnl = new JPanel(new BorderLayout());
         pnl.setOpaque(false);
 
-        String[] cols = {"student_id", "Họ Tên Học Viên", "Trạng Thái", "Ghi Chú"};
+        String[] cols = { "student_id", "Họ Tên Học Viên", "Trạng Thái", "Ghi Chú" };
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -155,14 +155,24 @@ public class AttendancePanel extends JPanel {
         tblAttendance.setRowHeight(28);
         tblAttendance.setFont(new Font("Arial", Font.PLAIN, 12));
         tblAttendance.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-        tblAttendance.getTableHeader().setBackground(new Color(46, 139, 87));
-        tblAttendance.getTableHeader().setForeground(Color.WHITE);
+        tblAttendance.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setBackground(new Color(46, 139, 87));
+                setForeground(Color.WHITE);
+                setFont(new Font("Arial", Font.BOLD, 12));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 2, 1, new Color(30, 100, 60)));
+                setOpaque(true);
+                return this;
+            }
+        });
 
         tblAttendance.getColumnModel().getColumn(COL_ID).setMinWidth(0);
         tblAttendance.getColumnModel().getColumn(COL_ID).setMaxWidth(0);
 
-        JComboBox<Attendance.AttendanceStatus> statusCombo =
-                new JComboBox<>(Attendance.AttendanceStatus.values());
+        JComboBox<Attendance.AttendanceStatus> statusCombo = new JComboBox<>(Attendance.AttendanceStatus.values());
         tblAttendance.getColumnModel().getColumn(COL_STATUS)
                 .setCellEditor(new DefaultCellEditor(statusCombo));
 
@@ -170,7 +180,7 @@ public class AttendancePanel extends JPanel {
                 .setCellRenderer(new DefaultTableCellRenderer() {
                     @Override
                     public Component getTableCellRendererComponent(JTable t, Object v,
-                                                                   boolean sel, boolean foc, int r, int c) {
+                            boolean sel, boolean foc, int r, int c) {
                         super.getTableCellRendererComponent(t, v, sel, foc, r, c);
                         if (v instanceof Attendance.AttendanceStatus) {
                             switch ((Attendance.AttendanceStatus) v) {
@@ -222,7 +232,7 @@ public class AttendancePanel extends JPanel {
 
             students.forEach(s -> {
                 Attendance att = existing.get(s.getStudentId());
-                tableModel.addRow(new Object[]{
+                tableModel.addRow(new Object[] {
                         s.getStudentId(),
                         s.getFullName(),
                         att != null ? att.getStatus() : Attendance.AttendanceStatus.Present,
@@ -243,7 +253,8 @@ public class AttendancePanel extends JPanel {
                     "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        if (tblAttendance.isEditing()) tblAttendance.getCellEditor().stopCellEditing();
+        if (tblAttendance.isEditing())
+            tblAttendance.getCellEditor().stopCellEditing();
 
         LocalDate date = getSelectedDate();
         Map<Student, Attendance.AttendanceStatus> statusMap = new LinkedHashMap<>();
@@ -263,7 +274,8 @@ public class AttendancePanel extends JPanel {
             if (realStudent != null) {
                 Object stObj = tableModel.getValueAt(i, COL_STATUS);
                 Attendance.AttendanceStatus st = (stObj instanceof Attendance.AttendanceStatus)
-                        ? (Attendance.AttendanceStatus) stObj : Attendance.AttendanceStatus.Present;
+                        ? (Attendance.AttendanceStatus) stObj
+                        : Attendance.AttendanceStatus.Present;
                 statusMap.put(realStudent, st);
                 noteMap.put(realStudent, (String) tableModel.getValueAt(i, COL_NOTE));
             }
@@ -290,9 +302,12 @@ public class AttendancePanel extends JPanel {
         long present = 0, absent = 0, late = 0;
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             Object v = tableModel.getValueAt(i, COL_STATUS);
-            if (v == Attendance.AttendanceStatus.Present) present++;
-            else if (v == Attendance.AttendanceStatus.Absent) absent++;
-            else if (v == Attendance.AttendanceStatus.Late) late++;
+            if (v == Attendance.AttendanceStatus.Present)
+                present++;
+            else if (v == Attendance.AttendanceStatus.Absent)
+                absent++;
+            else if (v == Attendance.AttendanceStatus.Late)
+                late++;
         }
         lblSummary.setText("Có mặt: " + present + "  Vắng: " + absent + "  Trễ: " + late);
     }
@@ -314,6 +329,8 @@ public class AttendancePanel extends JPanel {
         JButton btn = new JButton(text);
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setFont(new Font("Arial", Font.BOLD, 12));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

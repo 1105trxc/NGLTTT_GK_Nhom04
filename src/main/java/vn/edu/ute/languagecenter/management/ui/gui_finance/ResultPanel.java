@@ -130,7 +130,7 @@ public class ResultPanel extends JPanel {
         JPanel pnl = new JPanel(new BorderLayout());
         pnl.setOpaque(false);
 
-        String[] cols = {"student_id", "Họ Tên Học Viên", "Điểm Số (0-100)", "Xếp Loại", "Nhận Xét"};
+        String[] cols = { "student_id", "Họ Tên Học Viên", "Điểm Số (0-100)", "Xếp Loại", "Nhận Xét" };
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -142,8 +142,19 @@ public class ResultPanel extends JPanel {
         tblResult.setRowHeight(26);
         tblResult.setFont(new Font("Arial", Font.PLAIN, 12));
         tblResult.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-        tblResult.getTableHeader().setBackground(new Color(106, 90, 205));
-        tblResult.getTableHeader().setForeground(Color.WHITE);
+        tblResult.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setBackground(new Color(106, 90, 205));
+                setForeground(Color.WHITE);
+                setFont(new Font("Arial", Font.BOLD, 12));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 2, 1, new Color(75, 60, 160)));
+                setOpaque(true);
+                return this;
+            }
+        });
         tblResult.setSelectionBackground(new Color(230, 220, 255));
 
         tblResult.getColumnModel().getColumn(COL_ID).setMinWidth(0);
@@ -154,16 +165,22 @@ public class ResultPanel extends JPanel {
                 .setCellRenderer(new DefaultTableCellRenderer() {
                     @Override
                     public Component getTableCellRendererComponent(JTable t, Object v,
-                                                                   boolean sel, boolean foc, int r, int c) {
+                            boolean sel, boolean foc, int r, int c) {
                         super.getTableCellRendererComponent(t, v, sel, foc, r, c);
                         if (v != null) {
                             String gr = v.toString();
-                            if (gr.startsWith("A")) setBackground(new Color(198, 239, 206));
-                            else if (gr.startsWith("B")) setBackground(new Color(220, 230, 255));
-                            else if (gr.startsWith("C")) setBackground(new Color(255, 235, 156));
-                            else if (gr.equals("D")) setBackground(new Color(255, 204, 128));
-                            else if (gr.equals("F")) setBackground(new Color(255, 199, 206));
-                            else setBackground(Color.WHITE);
+                            if (gr.startsWith("A"))
+                                setBackground(new Color(198, 239, 206));
+                            else if (gr.startsWith("B"))
+                                setBackground(new Color(220, 230, 255));
+                            else if (gr.startsWith("C"))
+                                setBackground(new Color(255, 235, 156));
+                            else if (gr.equals("D"))
+                                setBackground(new Color(255, 204, 128));
+                            else if (gr.equals("F"))
+                                setBackground(new Color(255, 199, 206));
+                            else
+                                setBackground(Color.WHITE);
                             setForeground(Color.BLACK);
                             setHorizontalAlignment(CENTER);
                         }
@@ -177,11 +194,14 @@ public class ResultPanel extends JPanel {
 
             @Override
             public void tableChanged(TableModelEvent e) {
-                if (updating || e.getColumn() != COL_SCORE) return;
+                if (updating || e.getColumn() != COL_SCORE)
+                    return;
                 int row = e.getFirstRow();
-                if (row < 0) return;
+                if (row < 0)
+                    return;
                 Object val = tableModel.getValueAt(row, COL_SCORE);
-                if (val == null || val.toString().isBlank()) return;
+                if (val == null || val.toString().isBlank())
+                    return;
                 try {
                     String grade = resultService.calculateGrade(new BigDecimal(val.toString()));
                     updating = true;
@@ -241,7 +261,7 @@ public class ResultPanel extends JPanel {
 
             students.forEach(s -> {
                 Result r = existingResults.get(s.getStudentId());
-                tableModel.addRow(new Object[]{
+                tableModel.addRow(new Object[] {
                         s.getStudentId(), s.getFullName(),
                         r != null ? r.getScore() : "",
                         r != null ? r.getGrade() : "",
@@ -261,14 +281,16 @@ public class ResultPanel extends JPanel {
                     "Thông báo", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        if (tblResult.isEditing()) tblResult.getCellEditor().stopCellEditing();
+        if (tblResult.isEditing())
+            tblResult.getCellEditor().stopCellEditing();
 
         Map<Student, BigDecimal> scores = new LinkedHashMap<>();
         Map<Student, String> comments = new LinkedHashMap<>();
 
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             Object scoreVal = tableModel.getValueAt(i, COL_SCORE);
-            if (scoreVal == null || scoreVal.toString().isBlank()) continue;
+            if (scoreVal == null || scoreVal.toString().isBlank())
+                continue;
             try {
                 BigDecimal score = new BigDecimal(scoreVal.toString());
                 Student stub = new Student();
@@ -299,7 +321,8 @@ public class ResultPanel extends JPanel {
 
     private void refreshStats() {
         Class_ cls = (Class_) cboClass.getSelectedItem();
-        if (cls == null) return;
+        if (cls == null)
+            return;
         try {
             Map<String, Long> gradeCount = resultService.countByGrade(cls);
             OptionalDouble avg = resultService.averageScore(cls);
@@ -308,12 +331,14 @@ public class ResultPanel extends JPanel {
             sb.append("📊 THỐNG KÊ LỚP\n─────────────────\n");
             List.of("A+", "A", "B+", "B", "C+", "C", "D", "F", "N/A").forEach(gr -> {
                 long count = gradeCount.getOrDefault(gr, 0L);
-                if (count > 0) sb.append(String.format("%-4s : %d học viên\n", gr, count));
+                if (count > 0)
+                    sb.append(String.format("%-4s : %d học viên\n", gr, count));
             });
             long total = gradeCount.values().stream().mapToLong(Long::longValue).sum();
             sb.append("─────────────────\n");
             sb.append(String.format("Tổng  : %d\n", total));
-            if (avg.isPresent()) sb.append(String.format("Avg   : %.2f\n", avg.getAsDouble()));
+            if (avg.isPresent())
+                sb.append(String.format("Avg   : %.2f\n", avg.getAsDouble()));
             txaStats.setText(sb.toString());
         } catch (Exception ex) {
             txaStats.setText("Lỗi: " + ex.getMessage());
@@ -332,6 +357,8 @@ public class ResultPanel extends JPanel {
         JButton btn = new JButton(text);
         btn.setBackground(bg);
         btn.setForeground(Color.WHITE);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setFont(new Font("Arial", Font.BOLD, 12));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));

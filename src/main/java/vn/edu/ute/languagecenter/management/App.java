@@ -23,7 +23,7 @@ public class App {
     // - UserAccount.UserRole.Staff
     // - UserAccount.UserRole.Teacher
     // - UserAccount.UserRole.Student
-    private static final UserAccount.UserRole DEV_ROLE = UserAccount.UserRole.Student; // Đổi quyền ở đây nhe!
+    private static final UserAccount.UserRole DEV_ROLE = UserAccount.UserRole.Admin; // Đổi quyền ở đây nhe!
 
     public static void main(String[] args) {
         try {
