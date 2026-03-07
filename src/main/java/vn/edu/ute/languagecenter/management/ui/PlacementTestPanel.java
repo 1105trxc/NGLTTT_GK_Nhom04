@@ -28,14 +28,20 @@ public class PlacementTestPanel extends JPanel {
 
     public PlacementTestPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setBackground(Color.WHITE);
         initComponents();
         refreshData();
     }
 
     private void initComponents() {
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Kiểm tra đầu vào (Placement Test)"));
+        formPanel.setBackground(new Color(240, 248, 255));
+        formPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(100, 149, 237), 1),
+                "Kiểm Tra Đầu Vào (Placement Test)", javax.swing.border.TitledBorder.LEFT,
+                javax.swing.border.TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 13), new Color(25, 25, 112)));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -61,7 +67,7 @@ public class PlacementTestPanel extends JPanel {
         gbc.gridy = 2;
         formPanel.add(new JLabel("Điểm (0-10):"), gbc);
         gbc.gridx = 1;
-        txtScore = new JTextField(6);
+        txtScore = createTextField(6);
         formPanel.add(txtScore, gbc);
 
         gbc.gridx = 2;
@@ -74,26 +80,31 @@ public class PlacementTestPanel extends JPanel {
         formPanel.add(new JLabel("Ghi chú:"), gbc);
         gbc.gridx = 1;
         gbc.gridwidth = 2;
-        txtNote = new JTextField(25);
+        txtNote = createTextField(25);
         formPanel.add(txtNote, gbc);
         gbc.gridwidth = 1;
 
         txtScore.addActionListener(e -> updateSuggestedLevel());
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnAdd = new JButton("Lưu kết quả");
-        btnDelete = new JButton("Xóa");
-        btnClear = new JButton("Làm mới");
-        btnRefresh = new JButton("Tải lại");
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        btnPanel.setOpaque(false);
+        btnAdd = makeButton("✅ Lưu kết quả", new Color(46, 139, 87));
+        btnDelete = makeButton("❌ Xóa", new Color(178, 34, 34));
+        btnClear = makeButton("🧹 Làm mới", new Color(70, 130, 180));
+        btnRefresh = makeButton("🔄 Tải lại", new Color(245, 158, 11));
         btnPanel.add(btnAdd);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
         btnPanel.add(btnRefresh);
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(formPanel, BorderLayout.CENTER);
-        topPanel.add(btnPanel, BorderLayout.SOUTH);
-        add(topPanel, BorderLayout.NORTH);
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 4;
+        gbc.weightx = 1.0;
+        gbc.insets = new Insets(10, 5, 5, 5);
+        formPanel.add(btnPanel, gbc);
+
+        add(formPanel, BorderLayout.NORTH);
 
         String[] cols = { "ID", "Học viên", "Ngày thi", "Điểm", "Cấp độ gợi ý", "Ghi chú" };
         tableModel = new DefaultTableModel(cols, 0) {
@@ -103,8 +114,42 @@ public class PlacementTestPanel extends JPanel {
             }
         };
         table = new JTable(tableModel);
+        table.setRowHeight(24);
+        table.setFont(new Font("Arial", Font.PLAIN, 12));
+        table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        table.getTableHeader().setDefaultRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setBackground(new Color(100, 149, 237));
+                setForeground(Color.WHITE);
+                setFont(new Font("Arial", Font.BOLD, 12));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 2, 1, new Color(60, 100, 180)));
+                setOpaque(true);
+                return this;
+            }
+        });
+        table.setSelectionBackground(new Color(173, 216, 230));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting())
+                fillForm();
+        });
+        table.getColumnModel().getColumn(0).setMinWidth(0);
+        table.getColumnModel().getColumn(0).setMaxWidth(0);
+
+        JPanel centerPanel = new JPanel(new BorderLayout(0, 6));
+        centerPanel.setOpaque(false);
+        centerPanel.add(new JScrollPane(table), BorderLayout.CENTER);
+        add(centerPanel, BorderLayout.CENTER);
+
+        // Bottom panel đếm Số lượng
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomPanel.setOpaque(false);
+        JLabel lblTotal = new JLabel("Tổng bản ghi: 0");
+        lblTotal.setName("lblTotal");
+        bottomPanel.add(lblTotal);
+        add(bottomPanel, BorderLayout.SOUTH);
 
         btnAdd.addActionListener(e -> addTest());
         btnDelete.addActionListener(e -> deleteTest());
@@ -143,6 +188,44 @@ public class PlacementTestPanel extends JPanel {
                     t.getTestDate(), t.getScore(), t.getSuggestedLevel(), t.getNote()
             });
         }
+        updateTotalLabel(tests.size());
+    }
+
+    private void updateTotalLabel(int total) {
+        Component south = ((BorderLayout) getLayout()).getLayoutComponent(BorderLayout.SOUTH);
+        if (south instanceof JPanel) {
+            for (Component c : ((JPanel) south).getComponents()) {
+                if (c instanceof JLabel && "lblTotal".equals(c.getName()))
+                    ((JLabel) c).setText("Tổng bản ghi: " + total);
+            }
+        }
+    }
+
+    private void fillForm() {
+        int row = table.getSelectedRow();
+        if (row < 0)
+            return;
+        Long id = (Long) tableModel.getValueAt(row, 0);
+        try {
+            PlacementTest t = service.findTestById(id).orElse(null);
+            if (t != null) {
+                Student s = t.getStudent();
+                if (s != null) {
+                    for (int i = 0; i < cboStudent.getItemCount(); i++) {
+                        if (cboStudent.getItemAt(i).id().equals(s.getStudentId())) {
+                            cboStudent.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
+                DateUtil.setLocalDate(dcDate, t.getTestDate());
+                txtScore.setText(t.getScore() != null ? t.getScore().toString() : "");
+                updateSuggestedLevel();
+                txtNote.setText(t.getNote() != null ? t.getNote() : "");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void updateSuggestedLevel() {
@@ -173,7 +256,8 @@ public class PlacementTestPanel extends JPanel {
                 t.setScore(new BigDecimal(sc));
             t.setNote(txtNote.getText().trim());
             service.saveTest(t);
-            JOptionPane.showMessageDialog(this, "Lưu kết quả thành công!");
+            JOptionPane.showMessageDialog(this, "Lưu kết quả thành công!", "Thành công",
+                    JOptionPane.INFORMATION_MESSAGE);
             clearForm();
             refreshData();
         } catch (Exception e) {
@@ -193,7 +277,7 @@ public class PlacementTestPanel extends JPanel {
         try {
             Long id = (Long) tableModel.getValueAt(row, 0);
             service.deleteTestById(id);
-            JOptionPane.showMessageDialog(this, "Xóa thành công!");
+            JOptionPane.showMessageDialog(this, "Xóa thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             refreshData();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -213,5 +297,30 @@ public class PlacementTestPanel extends JPanel {
         public String toString() {
             return name;
         }
+    }
+
+    // Tiện ích UI
+    private static JButton makeButton(String text, Color bg) {
+        JButton btn = new JButton(text);
+        btn.setBackground(bg);
+        btn.setForeground(Color.WHITE);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setFont(new Font("Arial", Font.BOLD, 12));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+        return btn;
+    }
+
+    private JTextField createTextField(int columns) {
+        JTextField tf = new JTextField(columns);
+        tf.setBackground(Color.WHITE);
+        tf.setForeground(new Color(30, 30, 30));
+        tf.setCaretColor(new Color(70, 130, 180));
+        tf.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(170, 190, 215), 1),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+        return tf;
     }
 }
