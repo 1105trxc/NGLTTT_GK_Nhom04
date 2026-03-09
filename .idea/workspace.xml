@@ -6,8 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="Merge branch 'merge/di-khoa-lam' of https://github.com/1105trxc/NGLTTT_GK_Nhom04 into merge/di-khoa-lam&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;src/main/resources/META-INF/persistence.xml">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/AttendancePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/AttendancePanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/ResultPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/ResultPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/App.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/App.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,7 +14,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="102" />
+    <option name="cachedIndexableFilesCount" value="104" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -33,12 +32,12 @@
     &quot;assignee&quot;: &quot;Lamnguyen030405&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/1105trxc/NGLTTT_GK_Nhom04.git",
-    "accountId": "f781ef89-8a9c-4cd6-85b8-b85d95f75425"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/1105trxc/NGLTTT_GK_Nhom04.git&quot;,
+    &quot;accountId&quot;: &quot;f781ef89-8a9c-4cd6-85b8-b85d95f75425&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -51,28 +50,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.App.executor": "Run",
-    "Application.AttendancePanel.executor": "Run",
-    "Application.EnrollmentPanel.executor": "Run",
-    "Application.InvoicePaymentPanel.executor": "Run",
-    "Application.ResultPanel.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "lam",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/vn/edu/ute/languagecenter/management/db",
-    "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.0"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.App.executor&quot;: &quot;Run&quot;,
+    &quot;Application.AttendancePanel.executor&quot;: &quot;Run&quot;,
+    &quot;Application.EnrollmentPanel.executor&quot;: &quot;Run&quot;,
+    &quot;Application.InvoicePaymentPanel.executor&quot;: &quot;Run&quot;,
+    &quot;Application.ResultPanel.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;merge/di-khoa-lam&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/vn/edu/ute/languagecenter/management/db&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04\src\main\java\vn\edu\ute\languagecenter\management\db" />
@@ -80,7 +79,7 @@
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04\src\main\resources" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.InvoicePaymentPanel">
+  <component name="RunManager" selected="Application.ResultPanel">
     <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="17" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -150,11 +149,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.InvoicePaymentPanel" />
         <item itemvalue="Application.ResultPanel" />
+        <item itemvalue="Application.App" />
+        <item itemvalue="Application.InvoicePaymentPanel" />
         <item itemvalue="Application.EnrollmentPanel" />
         <item itemvalue="Application.AttendancePanel" />
-        <item itemvalue="Application.App" />
       </list>
     </recent_temporary>
   </component>
