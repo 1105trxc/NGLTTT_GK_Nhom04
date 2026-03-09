@@ -11,7 +11,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="104" />
+    <option name="cachedIndexableFilesCount" value="102" />
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -76,7 +76,7 @@
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04\src\main\resources" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.ResultPanel">
+  <component name="RunManager" selected="Application.App">
     <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="17" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -146,8 +146,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.ResultPanel" />
         <item itemvalue="Application.App" />
+        <item itemvalue="Application.ResultPanel" />
         <item itemvalue="Application.InvoicePaymentPanel" />
         <item itemvalue="Application.EnrollmentPanel" />
         <item itemvalue="Application.AttendancePanel" />

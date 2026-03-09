@@ -24,4 +24,6 @@ public interface UserAccountRepository {
     List<UserAccount> findByRole(UserAccount.UserRole role);
 
     List<UserAccount> findAllInactive();
+
+    List<UserAccount> findAllWithLinks();
 }

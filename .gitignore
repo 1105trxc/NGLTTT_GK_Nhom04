@@ -44,5 +44,8 @@ build/
 .PhanChiaCongViec.md
 .gitignore
 .context.md
+
+.workspace.xml
 pom.xml
 src/main/resources/META-INF/persistence.xml
+

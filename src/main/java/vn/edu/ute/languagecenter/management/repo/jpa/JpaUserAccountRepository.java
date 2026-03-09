@@ -73,20 +73,17 @@ public class JpaUserAccountRepository extends GenericRepository<UserAccount>
         }
     }
 
-    /**
-     * Lấy tất cả UserAccount kèm theo thông tin liên kết (Teacher, Staff, Student)
-     * bằng LEFT JOIN FETCH để tránh LazyInitializationException khi session đã
-     * đóng.
-     */
+    @Override
     public List<UserAccount> findAllWithLinks() {
         EntityManager em = getEntityManager();
         try {
-            String hql = "SELECT DISTINCT u FROM UserAccount u " +
+            String hql = "SELECT u FROM UserAccount u " +
                     "LEFT JOIN FETCH u.teacher " +
                     "LEFT JOIN FETCH u.staff " +
                     "LEFT JOIN FETCH u.student " +
                     "ORDER BY u.username ASC";
-            return em.createQuery(hql, UserAccount.class).getResultList();
+            TypedQuery<UserAccount> q = em.createQuery(hql, UserAccount.class);
+            return q.getResultList();
         } finally {
             em.close();
         }

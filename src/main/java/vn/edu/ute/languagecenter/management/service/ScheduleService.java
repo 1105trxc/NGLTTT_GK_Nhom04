@@ -43,6 +43,10 @@ public class ScheduleService {
         return scheduleRepo.findById(id);
     }
 
+    public List<Schedule> findByTeacherId(Long teacherId) {
+        return scheduleRepo.findByTeacherId(teacherId);
+    }
+
     public List<Schedule> findAll() {
         return scheduleRepo.findAll();
     }

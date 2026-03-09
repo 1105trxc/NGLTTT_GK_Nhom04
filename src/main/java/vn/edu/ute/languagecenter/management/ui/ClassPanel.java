@@ -33,8 +33,10 @@ public class ClassPanel extends JPanel {
     private JComboBox<RoomItem> cboRoom;
     private JComboBox<String> cboStatus;
     private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch;
+    private Long teacherId;
 
-    public ClassPanel() {
+    public ClassPanel(Long teacherId) {
+        this.teacherId = teacherId;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
@@ -128,6 +130,10 @@ public class ClassPanel extends JPanel {
         gbc.insets = new Insets(10, 5, 5, 5);
         formPanel.add(btnPanel, gbc);
 
+        if (teacherId != null) {
+            formPanel.setVisible(false);
+        }
+
         add(formPanel, BorderLayout.NORTH);
 
         // Table
@@ -197,7 +203,11 @@ public class ClassPanel extends JPanel {
     public void refreshData() {
         loadCombos();
         try {
-            loadTable(classService.findAll());
+            if (teacherId != null) {
+                loadTable(classService.findByTeacherId(teacherId));
+            } else {
+                loadTable(classService.findAll());
+            }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
         }
@@ -215,11 +225,13 @@ public class ClassPanel extends JPanel {
         cboTeacher.addItem(new TeacherItem(null, "-- Không chọn --"));
         try {
             EntityManager em = Jpa.em();
-            List<Teacher> teachers = em.createQuery("SELECT t FROM Teacher t WHERE t.status = 'Active'", Teacher.class)
-                    .getResultList();
+            List<Teacher> teachers = em.createQuery("SELECT t FROM Teacher t", Teacher.class).getResultList();
             em.close();
-            for (Teacher t : teachers)
-                cboTeacher.addItem(new TeacherItem(t.getTeacherId(), t.getFullName()));
+            for (Teacher t : teachers) {
+                if (t.getStatus() != null && t.getStatus().name().equals("Active")) {
+                    cboTeacher.addItem(new TeacherItem(t.getTeacherId(), t.getFullName()));
+                }
+            }
         } catch (Exception ignored) {
         }
 
@@ -245,11 +257,31 @@ public class ClassPanel extends JPanel {
         }
     }
 
+    private void setSelectedComboItem(JComboBox<?> cbo, String name) {
+        if (name == null || name.isEmpty()) {
+            if (cbo.getItemCount() > 0)
+                cbo.setSelectedIndex(0);
+            return;
+        }
+        for (int i = 0; i < cbo.getItemCount(); i++) {
+            Object obj = cbo.getItemAt(i);
+            if (obj != null && obj.toString().equals(name)) {
+                cbo.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
     private void fillForm() {
         int row = table.getSelectedRow();
         if (row < 0)
             return;
         txtName.setText((String) tableModel.getValueAt(row, 1));
+
+        setSelectedComboItem(cboCourse, (String) tableModel.getValueAt(row, 2));
+        setSelectedComboItem(cboTeacher, (String) tableModel.getValueAt(row, 3));
+        setSelectedComboItem(cboRoom, (String) tableModel.getValueAt(row, 4));
+
         Object sd = tableModel.getValueAt(row, 5);
         DateUtil.setLocalDate(dcStartDate, sd instanceof LocalDate ? (LocalDate) sd : null);
         Object ed = tableModel.getValueAt(row, 6);

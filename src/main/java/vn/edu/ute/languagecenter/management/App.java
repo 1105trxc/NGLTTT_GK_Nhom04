@@ -15,7 +15,7 @@ import javax.swing.*;
 public class App {
 
     // *** ĐỔI THÀNH false KHI NỘP BÀI / DEMO THẬT ***
-    private static final boolean DEV_MODE = true;
+    private static final boolean DEV_MODE = false;
 
     // Nếu DEV_MODE = true, bạn được chọn quyền để test nhanh (không cần đăng nhập).
     // Các giá trị có thể chọn:
@@ -23,7 +23,7 @@ public class App {
     // - UserAccount.UserRole.Staff
     // - UserAccount.UserRole.Teacher
     // - UserAccount.UserRole.Student
-    private static final UserAccount.UserRole DEV_ROLE = UserAccount.UserRole.Teacher; // Đổi quyền ở đây nhe!
+    private static final UserAccount.UserRole DEV_ROLE = UserAccount.UserRole.Admin; // Đổi quyền ở đây nhe!
 
     public static void main(String[] args) {
         try {

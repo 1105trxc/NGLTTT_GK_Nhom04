@@ -406,9 +406,9 @@ public class MainDashboard extends JFrame {
 
         // HOC VU
         contentPanel.add(new CoursePanel(), CARD_COURSE);
-        contentPanel.add(new ClassPanel(), CARD_CLASS);
+        contentPanel.add(new ClassPanel(teacherId), CARD_CLASS);
         contentPanel.add(new RoomPanel(), CARD_ROOM);
-        contentPanel.add(new SchedulePanel(), CARD_SCHEDULE);
+        contentPanel.add(new SchedulePanel(teacherId), CARD_SCHEDULE);
         contentPanel.add(new PlacementTestPanel(), CARD_PLACEMENT);
         contentPanel.add(new CertificatePanel(), CARD_CERT);
 
@@ -423,6 +423,16 @@ public class MainDashboard extends JFrame {
 
     public void showCard(String cardName) {
         cardLayout.show(contentPanel, cardName);
+        for (Component comp : contentPanel.getComponents()) {
+            if (comp.isVisible()) {
+                try {
+                    java.lang.reflect.Method m = comp.getClass().getMethod("refreshData");
+                    m.invoke(comp);
+                } catch (Exception ignored) {
+                }
+                break;
+            }
+        }
     }
 
     // =========================================================================
