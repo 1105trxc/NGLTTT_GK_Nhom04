@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="Merge branch 'merge/di-khoa-lam' of https://github.com/1105trxc/NGLTTT_GK_Nhom04 into merge/di-khoa-lam&#10;&#10;# Conflicts:&#10;#&#9;.idea/workspace.xml&#10;#&#9;src/main/resources/META-INF/persistence.xml">
+    <list default="true" id="f2dd4cdc-24e6-479a-80aa-5bc1128b5376" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-<<<<<<< HEAD
-=======
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/AttendancePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/AttendancePanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/ResultPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/vn/edu/ute/languagecenter/management/ui/gui_finance/ResultPanel.java" afterDir="false" />
->>>>>>> merge/di-khoa-lam
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,17 +26,17 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
-  &quot;lastFilter&quot;: {
+    &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
     &quot;assignee&quot;: &quot;Lamnguyen030405&quot;
+    }
+    }</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/1105trxc/NGLTTT_GK_Nhom04.git&quot;,
+    &quot;accountId&quot;: &quot;f781ef89-8a9c-4cd6-85b8-b85d95f75425&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/1105trxc/NGLTTT_GK_Nhom04.git",
-    "accountId": "f781ef89-8a9c-4cd6-85b8-b85d95f75425"
-  }
-}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
@@ -56,28 +51,6 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-<<<<<<< HEAD
-    "Application.TestMainFrame.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "khoa",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/hocTap/NNLTTT/GK_real/NGLTTT_GK_Nhom04",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
-=======
     "Application.App.executor": "Run",
     "Application.AttendancePanel.executor": "Run",
     "Application.EnrollmentPanel.executor": "Run",
@@ -89,14 +62,13 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "lam",
+    "git-widget-placeholder": "khoa",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/vn/edu/ute/languagecenter/management/db",
     "onboarding.tips.debug.path": "D:/Learning/NgonNguLapTrinhTienTien/NGLTTT_GK_Nhom04/src/main/java/org/example/Main.java",
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.0"
->>>>>>> merge/di-khoa-lam
   }
 }]]></component>
   <component name="RecentsManager">
@@ -106,9 +78,7 @@
       <recent name="D:\Learning\NgonNguLapTrinhTienTien\NGLTTT_GK_Nhom04\src\main\resources" />
     </key>
   </component>
-<<<<<<< HEAD
-=======
-  <component name="RunManager" selected="Application.InvoicePaymentPanel">
+  <component name="RunManager" selected="Application.App">
     <configuration name="App" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="17" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
@@ -178,15 +148,14 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.App" />
         <item itemvalue="Application.InvoicePaymentPanel" />
         <item itemvalue="Application.ResultPanel" />
         <item itemvalue="Application.EnrollmentPanel" />
         <item itemvalue="Application.AttendancePanel" />
-        <item itemvalue="Application.App" />
       </list>
     </recent_temporary>
   </component>
->>>>>>> merge/di-khoa-lam
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -201,10 +170,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1772436258259</updated>
-<<<<<<< HEAD
-      <workItem from="1772502424189" duration="3435000" />
-=======
->>>>>>> merge/di-khoa-lam
     </task>
     <servers />
   </component>
