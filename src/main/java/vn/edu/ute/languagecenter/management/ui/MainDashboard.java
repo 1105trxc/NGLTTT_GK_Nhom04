@@ -33,6 +33,7 @@ public class MainDashboard extends JFrame {
 
     // ─── Tên card ────────────────────────────────────────────────────────────
     public static final String CARD_HOME = "HOME";
+    public static final String CARD_NOTIFICATION = "NOTIFICATION";
     public static final String CARD_TEACHER = "TEACHER";
     public static final String CARD_STAFF = "STAFF";
     public static final String CARD_STUDENT = "STUDENT";
@@ -249,6 +250,11 @@ public class MainDashboard extends JFrame {
 
         UserAccount.UserRole role = currentUser.getRole();
 
+        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
+                || role == UserAccount.UserRole.Teacher) {
+            innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // PHÂN QUYỀN MENU THEO TÀI LIỆU YÊU CẦU:
         // Admin - Toàn quyền tất cả chức năng
@@ -396,6 +402,11 @@ public class MainDashboard extends JFrame {
 
         // HOME
         contentPanel.add(buildHomePanel(), CARD_HOME);
+
+        // THONG BAO
+        if (currentUser.getRole() != UserAccount.UserRole.Student) {
+            contentPanel.add(new NotificationPanel(currentUser), CARD_NOTIFICATION);
+        }
 
         // NHAN SU
         contentPanel.add(new TeacherPanel(), CARD_TEACHER);
