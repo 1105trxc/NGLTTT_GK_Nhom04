@@ -1,0 +1,162 @@
+Với vai trò BA (Business Analyst), khi phân tích Hệ thống thông tin quản lý trung tâm dạy học ngoại ngữ, bạn cần xác định các thực thể (entities) cốt lõi dựa trên nghiệp vụ thực tế của trung tâm. Dưới đây là danh sách chuẩn theo mô hình dữ liệu (Data Model / ERD) thường dùng trong các trung tâm ngoại ngữ.
+I. Nhóm thực thể cốt lõi (Core Entities)
+1. Học viên (Student)
+Mục đích: Quản lý thông tin người học
+Thuộc tính chính:
+StudentID (PK)
+FullName
+DateOfBirth
+Gender
+Phone
+Email
+Address
+RegistrationDate
+Status (Active, Inactive)
+2. Giáo viên (Teacher)
+Mục đích: Quản lý thông tin giảng viên
+Thuộc tính:
+TeacherID (PK)
+FullName
+Phone
+Email
+Specialty (IELTS, TOEIC, giao tiếp…)
+HireDate
+Status
+3. Khóa học (Course)
+Mục đích: Quản lý các chương trình đào tạo
+Thuộc tính:
+CourseID (PK)
+CourseName
+Description
+Level (Beginner, Intermediate, Advanced)
+Duration (số giờ / số tuần)
+Fee
+Status
+4. Lớp học (Class)
+Mục đích: Một khóa học có thể mở nhiều lớp
+Thuộc tính:
+ClassID (PK)
+ClassName
+CourseID (FK)
+TeacherID (FK)
+StartDate
+EndDate
+MaxStudent
+RoomID (FK)
+Status
+5. Đăng ký học (Enrollment)
+Mục đích: Liên kết học viên với lớp học
+Thuộc tính:
+EnrollmentID (PK)
+StudentID (FK)
+ClassID (FK)
+EnrollmentDate
+Status
+Result (Pass, Fail)
+II. Nhóm thực thể tài chính
+6. Thanh toán (Payment)
+Thuộc tính:
+PaymentID (PK)
+StudentID (FK)
+EnrollmentID (FK)
+Amount
+PaymentDate
+PaymentMethod (Cash, Bank, Momo…)
+Status
+7. Hóa đơn (Invoice)
+Thuộc tính:
+InvoiceID (PK)
+StudentID (FK)
+TotalAmount
+IssueDate
+Status
+III. Nhóm thực thể vận hành
+8. Phòng học (Room)
+Thuộc tính:
+RoomID (PK)
+RoomName
+Capacity
+Location
+Status
+9. Lịch học (Schedule)
+Thuộc tính:
+ScheduleID (PK)
+ClassID (FK)
+Date
+StartTime
+EndTime
+RoomID (FK)
+10. Điểm danh (Attendance)
+Thuộc tính:
+AttendanceID (PK)
+StudentID (FK)
+ClassID (FK)
+Date
+Status (Present, Absent, Late)
+IV. Nhóm thực thể hệ thống
+11. Nhân viên (Staff)
+Thuộc tính:
+StaffID (PK)
+FullName
+Role (Admin, tư vấn, kế toán…)
+Phone
+Email
+12. Tài khoản (User Account)
+Thuộc tính:
+UserID (PK)
+Username
+PasswordHash
+Role (Admin, Teacher, Student)
+RelatedID (TeacherID / StudentID / StaffID)
+V. Nhóm thực thể học thuật
+13. Kết quả học tập (Result)
+Thuộc tính:
+ResultID (PK)
+StudentID (FK)
+ClassID (FK)
+Score
+Grade
+Comment
+VI. Mối quan hệ chính (Relationship)
+Sơ đồ logic:
+Student ---< Enrollment >--- Class --- Course
+                  |
+                  v
+               Payment
+Teacher ---< Class >--- Room
+Class ---< Schedule
+Student ---< Attendance >--- Class
+Student ---< Result >--- Class
+VII. Danh sách thực thể chuẩn BA thường dùng (Tổng hợp)
+Nhóm
+Thực thể
+Người dùng
+Student, Teacher, Staff, UserAccount
+Học thuật
+Course, Class, Enrollment, Result
+Vận hành
+Room, Schedule, Attendance
+Tài chính
+Payment, Invoice
+VIII. Nếu làm hệ thống đầy đủ chuẩn doanh nghiệp sẽ có thêm
+Branch (Chi nhánh)
+Promotion (Khuyến mãi)
+PlacementTest (Bài test đầu vào)
+Certificate (Chứng chỉ)
+Notification (Thông báo)
+IX. Bộ thực thể tối thiểu (Minimum Viable System)
+Nếu hệ thống nhỏ, chỉ cần:
+Student
+Teacher
+Course
+Class
+Enrollment
+Payment
+Schedule
+Attendance
+X. Deliverables BA nên tạo
+Khi làm dự án thật, BA sẽ tạo:
+ERD Diagram
+Data Dictionary
+Use Case Diagram
+BRD / SRS

@@ -20,6 +20,8 @@ public interface ScheduleRepository {
 
     List<Schedule> findAll(); // Lấy tất cả
 
+    List<Schedule> findByTeacherId(Long teacherId); // Lọc lịch theo giáo viên
+
     void deleteById(Long id); // Xóa theo ID
 
     List<Schedule> findByClassId(Long classId); // Lọc lịch theo lớp

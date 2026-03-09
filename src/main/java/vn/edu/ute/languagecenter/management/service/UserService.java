@@ -149,4 +149,48 @@ public class UserService {
         account.setUpdatedAt(LocalDateTime.now());
         userDAO.update(account);
     }
+
+    /**
+     * Tạo tài khoản đơn giản — chỉ cần username, password, role.
+     * Không bắt buộc liên kết với Teacher/Staff/Student.
+     */
+    public void createAccount(String username, String password, UserAccount.UserRole role) {
+        UserAccount account = new UserAccount();
+        account.setUsername(username);
+        account.setPasswordHash(password);
+        account.setRole(role);
+        account.setIsActive(true);
+        account.setCreatedAt(LocalDateTime.now());
+        account.setUpdatedAt(LocalDateTime.now());
+        userDAO.save(account);
+    }
+
+    /**
+     * Lấy danh sách tất cả tài khoản.
+     */
+    public java.util.List<UserAccount> findAllUsers() {
+        return userDAO.findAll();
+    }
+
+    /**
+     * Lấy danh sách tài khoản kèm theo thông tin liên kết đã được load eager
+     * (tránh LazyInitializationException khi truy cập teacher/staff/student).
+     */
+    public java.util.List<UserAccount> findAllUsersWithLinks() {
+        return userDAO.findAllWithLinks();
+    }
+
+    /**
+     * Đổi mật khẩu tài khoản theo ID.
+     *
+     * @param userId      ID tài khoản
+     * @param newPassword mật khẩu mới (plain-text)
+     */
+    public void changePassword(Long userId, String newPassword) {
+        UserAccount account = userDAO.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản ID=" + userId));
+        account.setPasswordHash(newPassword);
+        account.setUpdatedAt(LocalDateTime.now());
+        userDAO.update(account);
+    }
 }

@@ -72,4 +72,20 @@ public class JpaUserAccountRepository extends GenericRepository<UserAccount>
             em.close();
         }
     }
+
+    @Override
+    public List<UserAccount> findAllWithLinks() {
+        EntityManager em = getEntityManager();
+        try {
+            String hql = "SELECT u FROM UserAccount u " +
+                    "LEFT JOIN FETCH u.teacher " +
+                    "LEFT JOIN FETCH u.staff " +
+                    "LEFT JOIN FETCH u.student " +
+                    "ORDER BY u.username ASC";
+            TypedQuery<UserAccount> q = em.createQuery(hql, UserAccount.class);
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
+    }
 }

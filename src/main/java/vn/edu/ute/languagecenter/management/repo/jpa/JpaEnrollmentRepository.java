@@ -73,7 +73,7 @@ public class JpaEnrollmentRepository implements EnrollmentRepository {
         try {
             return tm.runInTransaction(em ->
                 em.createQuery(
-                    "SELECT e FROM Enrollment e JOIN FETCH e.student " +
+                    "SELECT e FROM Enrollment e JOIN FETCH e.student JOIN FETCH e.class_ " +
                     "WHERE e.class_ = :c ORDER BY e.student.fullName",
                     Enrollment.class
                 ).setParameter("c", class_).getResultList()

@@ -89,6 +89,19 @@ public class JpaScheduleRepository implements ScheduleRepository {
     }
 
     @Override
+    public List<Schedule> findByTeacherId(Long teacherId) {
+        EntityManager em = Jpa.em();
+        try {
+            return em.createQuery(
+                    "SELECT s FROM Schedule s WHERE s.class_.teacher.teacherId = :tid ORDER BY s.studyDate, s.startTime",
+                    Schedule.class)
+                    .setParameter("tid", teacherId).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
     public List<Schedule> findByRoomAndDate(Long roomId, LocalDate date) {
         EntityManager em = Jpa.em();
         try {

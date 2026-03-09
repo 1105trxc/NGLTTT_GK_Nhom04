@@ -86,4 +86,9 @@ public class Class_ {
     public enum ClassStatus {
         Planned, Open, Ongoing, Completed, Cancelled
     }
+
+    @Override
+    public String toString() {
+        return this.getClassName();
+    }
 }

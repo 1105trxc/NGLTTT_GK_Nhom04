@@ -3,83 +3,135 @@ package vn.edu.ute.languagecenter.management.ui.gui_finance;
 import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Enrollment;
 import vn.edu.ute.languagecenter.management.model.Student;
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
 import vn.edu.ute.languagecenter.management.service.EnrollmentService;
+import vn.edu.ute.languagecenter.management.service.StudentService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class EnrollmentPanel extends JPanel {
 
-    // ── Service (class trực tiếp, không interface) ────────────────────────────
+    // ── Services ──────────────────────────────────────────────────────────────
     private final EnrollmentService enrollmentService = new EnrollmentService();
+    private final StudentService studentService = new StudentService();
+    // ClassService chưa có → dùng JpaClassRepository trực tiếp
+    private final JpaClassRepository classRepo = new JpaClassRepository();
 
     private JComboBox<Student> cboStudent;
-    private JComboBox<Class_>  cboClass;
-    private JButton            btnEnroll;
-    private JButton            btnDrop;
-    private JButton            btnRefresh;
-    private JLabel             lblSiSo;
-    private JTable             tblEnrollment;
-    private DefaultTableModel  tableModel;
-    private JTextField         txtSearch;
-    private JButton            btnSearch;
+    private JComboBox<Class_> cboClass;
+    private JButton btnEnroll;
+    private JButton btnDrop;
+    private JButton btnRefresh;
+    private JLabel lblSiSo;
+    private JTable tblEnrollment;
+    private DefaultTableModel tableModel;
+    private JTextField txtSearch;
+    private JButton btnSearch;
 
     public EnrollmentPanel() {
         setLayout(new BorderLayout(10, 10));
         setBorder(new EmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
-        add(buildTopPanel(),    BorderLayout.NORTH);
+        add(buildTopPanel(), BorderLayout.NORTH);
         add(buildCenterPanel(), BorderLayout.CENTER);
         add(buildBottomPanel(), BorderLayout.SOUTH);
+
+        // Tự load dữ liệu ngay khi khởi tạo panel
+        refreshComboData();
+    }
+
+    // ── Tự load Student + Class vào ComboBox ─────────────────────────────────
+    private void refreshComboData() {
+        try {
+            List<Student> students = studentService.getActiveStudents();
+            cboStudent.removeAllItems();
+            students.forEach(cboStudent::addItem);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Không load được danh sách học viên: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+        try {
+            List<Class_> classes = classRepo.findAll();
+            cboClass.removeAllItems();
+            classes.forEach(cboClass::addItem);
+            updateSiSoLabel();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Không load được danh sách lớp học: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private JPanel buildTopPanel() {
         JPanel pnl = new JPanel(new GridBagLayout());
         pnl.setBackground(new Color(240, 248, 255));
         pnl.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(100, 149, 237), 1),
-            "Ghi Danh Học Viên", TitledBorder.LEFT, TitledBorder.TOP,
-            new Font("Arial", Font.BOLD, 13), new Color(25, 25, 112)));
+                BorderFactory.createLineBorder(new Color(100, 149, 237), 1),
+                "Ghi Danh Học Viên", TitledBorder.LEFT, TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 13), new Color(25, 25, 112)));
 
         GridBagConstraints g = new GridBagConstraints();
         g.insets = new Insets(6, 8, 6, 8);
-        g.fill   = GridBagConstraints.HORIZONTAL;
+        g.fill = GridBagConstraints.HORIZONTAL;
         g.anchor = GridBagConstraints.WEST;
 
-        g.gridx = 0; g.gridy = 0; g.weightx = 0;
+        g.gridx = 0;
+        g.gridy = 0;
+        g.weightx = 0;
         pnl.add(new JLabel("Học viên:"), g);
         cboStudent = new JComboBox<>();
         cboStudent.setPreferredSize(new Dimension(240, 28));
-        g.gridx = 1; g.weightx = 1; pnl.add(cboStudent, g);
+        g.gridx = 1;
+        g.weightx = 1;
+        pnl.add(cboStudent, g);
 
-        g.gridx = 2; g.weightx = 0; pnl.add(new JLabel("Lớp học:"), g);
+        g.gridx = 2;
+        g.weightx = 0;
+        pnl.add(new JLabel("Lớp học:"), g);
         cboClass = new JComboBox<>();
         cboClass.setPreferredSize(new Dimension(240, 28));
-        g.gridx = 3; g.weightx = 1; pnl.add(cboClass, g);
+        g.gridx = 3;
+        g.weightx = 1;
+        pnl.add(cboClass, g);
 
         lblSiSo = new JLabel("Sĩ số: --/--");
         lblSiSo.setForeground(new Color(70, 130, 180));
         lblSiSo.setFont(new Font("Arial", Font.BOLD, 12));
-        g.gridx = 4; g.weightx = 0; pnl.add(lblSiSo, g);
+        g.gridx = 4;
+        g.weightx = 0;
+        pnl.add(lblSiSo, g);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
-        btnEnroll  = makeButton("✅ Ghi Danh",      new Color(46, 139, 87));
-        btnDrop    = makeButton("❌ Hủy Ghi Danh",  new Color(178, 34, 34));
-        btnRefresh = makeButton("🔄 Làm Mới",       new Color(70, 130, 180));
-        btnPanel.add(btnEnroll); btnPanel.add(btnDrop); btnPanel.add(btnRefresh);
-        g.gridx = 0; g.gridy = 1; g.gridwidth = 5; g.weightx = 1;
+        btnEnroll = makeButton("✅ Ghi Danh", new Color(46, 139, 87));
+        btnDrop = makeButton("❌ Hủy Ghi Danh", new Color(178, 34, 34));
+        btnRefresh = makeButton("🔄 Làm Mới", new Color(70, 130, 180));
+        btnPanel.add(btnEnroll);
+        btnPanel.add(btnDrop);
+        btnPanel.add(btnRefresh);
+        g.gridx = 0;
+        g.gridy = 1;
+        g.gridwidth = 5;
+        g.weightx = 1;
         pnl.add(btnPanel, g);
 
-        cboClass.addActionListener(e -> updateSiSoLabel());
+        cboClass.addActionListener(e -> {
+            updateSiSoLabel();
+            loadTable();
+        });
         btnEnroll.addActionListener(e -> handleEnroll());
         btnDrop.addActionListener(e -> handleDrop());
-        btnRefresh.addActionListener(e -> loadTable());
+        btnRefresh.addActionListener(e -> {
+            refreshComboData();
+            loadTable();
+        });
         return pnl;
     }
 
@@ -90,22 +142,43 @@ public class EnrollmentPanel extends JPanel {
         JPanel searchBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 4));
         searchBar.setOpaque(false);
         txtSearch = new JTextField(20);
+        txtSearch.setBackground(Color.WHITE);
+        txtSearch.setForeground(new Color(30, 30, 30));
+        txtSearch.setCaretColor(new Color(70, 130, 180));
+        txtSearch.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(170, 190, 215), 1),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)));
         btnSearch = makeButton("🔍 Tìm", new Color(70, 130, 180));
-        searchBar.add(new JLabel("Tìm kiếm:")); searchBar.add(txtSearch); searchBar.add(btnSearch);
+        searchBar.add(new JLabel("Tìm kiếm:"));
+        searchBar.add(txtSearch);
+        searchBar.add(btnSearch);
         pnl.add(searchBar, BorderLayout.NORTH);
 
-        String[] cols = {"ID", "Học Viên", "Lớp Học", "Ngày Ghi Danh", "Trạng Thái", "Kết Quả"};
+        String[] cols = { "ID", "Học Viên", "Lớp Học", "Ngày Ghi Danh", "Trạng Thái", "Kết Quả" };
         tableModel = new DefaultTableModel(cols, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         tblEnrollment = new JTable(tableModel);
         tblEnrollment.setRowHeight(24);
         tblEnrollment.setFont(new Font("Arial", Font.PLAIN, 12));
         tblEnrollment.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-        tblEnrollment.getTableHeader().setBackground(new Color(100, 149, 237));
-        tblEnrollment.getTableHeader().setForeground(Color.WHITE);
+        tblEnrollment.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
+                    JTable t, Object v, boolean sel, boolean foc, int r, int c) {
+                super.getTableCellRendererComponent(t, v, sel, foc, r, c);
+                setBackground(new Color(100, 149, 237));
+                setForeground(Color.WHITE);
+                setFont(new Font("Arial", Font.BOLD, 12));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 2, 1, new Color(60, 100, 180)));
+                setOpaque(true);
+                return this;
+            }
+        });
         tblEnrollment.setSelectionBackground(new Color(173, 216, 230));
-        // Ẩn cột ID
         tblEnrollment.getColumnModel().getColumn(0).setMinWidth(0);
         tblEnrollment.getColumnModel().getColumn(0).setMaxWidth(0);
         pnl.add(new JScrollPane(tblEnrollment), BorderLayout.CENTER);
@@ -126,27 +199,27 @@ public class EnrollmentPanel extends JPanel {
 
     private void handleEnroll() {
         Student student = (Student) cboStudent.getSelectedItem();
-        Class_  class_  = (Class_)  cboClass.getSelectedItem();
+        Class_ class_ = (Class_) cboClass.getSelectedItem();
         if (student == null || class_ == null) {
             JOptionPane.showMessageDialog(this,
-                "Vui lòng chọn Học viên và Lớp học.", "Thiếu thông tin",
-                JOptionPane.WARNING_MESSAGE);
+                    "Vui lòng chọn Học viên và Lớp học.", "Thiếu thông tin",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
             enrollmentService.enroll(student, class_);
             JOptionPane.showMessageDialog(this,
-                "Ghi danh thành công!\nHọc viên: " + student.getFullName()
-                + "\nLớp: " + class_.getClassName(),
-                "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    "Ghi danh thành công!\nHọc viên: " + student.getFullName()
+                            + "\nLớp: " + class_.getClassName(),
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
             updateSiSoLabel();
             loadTable();
         } catch (IllegalStateException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(),
-                "Không thể ghi danh", JOptionPane.WARNING_MESSAGE);
+                    "Không thể ghi danh", JOptionPane.WARNING_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi hệ thống: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    "Lỗi hệ thống: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -154,8 +227,8 @@ public class EnrollmentPanel extends JPanel {
         int row = tblEnrollment.getSelectedRow();
         if (row < 0) {
             JOptionPane.showMessageDialog(this,
-                "Vui lòng chọn một dòng để hủy ghi danh.", "Chưa chọn",
-                JOptionPane.WARNING_MESSAGE);
+                    "Vui lòng chọn một dòng để hủy ghi danh.", "Chưa chọn",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
         Long id = (Long) tableModel.getValueAt(row, 0);
@@ -166,7 +239,7 @@ public class EnrollmentPanel extends JPanel {
                 loadTable();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this,
-                    "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -174,61 +247,73 @@ public class EnrollmentPanel extends JPanel {
     private void loadTable() {
         tableModel.setRowCount(0);
         Class_ selected = (Class_) cboClass.getSelectedItem();
-        if (selected == null) { updateTotalLabel(0); return; }
+        if (selected == null) {
+            updateTotalLabel(0);
+            return;
+        }
         try {
             List<Enrollment> list = enrollmentService.findByClass(selected);
-            list.forEach(e -> tableModel.addRow(new Object[]{
-                e.getEnrollmentId(),
-                e.getStudent().getFullName(),
-                e.getClass_().getClassName(),
-                e.getEnrollmentDate(),
-                e.getStatus(),
-                e.getResult()
-            }));
-            updateTotalLabel(list.size());
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                "Không tải được dữ liệu: " + ex.getMessage(),
-                "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void filterTable(String keyword) {
-        if (keyword.isEmpty()) { loadTable(); return; }
-        String kw = keyword.toLowerCase();
-        tableModel.setRowCount(0);
-        Class_ selected = (Class_) cboClass.getSelectedItem();
-        if (selected == null) return;
-        try {
-            enrollmentService.findByClass(selected).stream()
-                .filter(e -> e.getStudent().getFullName().toLowerCase().contains(kw)
-                          || e.getClass_().getClassName().toLowerCase().contains(kw))
-                .forEach(e -> tableModel.addRow(new Object[]{
+            list.forEach(e -> tableModel.addRow(new Object[] {
                     e.getEnrollmentId(),
                     e.getStudent().getFullName(),
                     e.getClass_().getClassName(),
                     e.getEnrollmentDate(),
                     e.getStatus(),
                     e.getResult()
-                }));
+            }));
+            updateTotalLabel(list.size());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Không tải được dữ liệu: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void filterTable(String keyword) {
+        if (keyword.isEmpty()) {
+            loadTable();
+            return;
+        }
+        String kw = keyword.toLowerCase();
+        tableModel.setRowCount(0);
+        Class_ selected = (Class_) cboClass.getSelectedItem();
+        if (selected == null)
+            return;
+        try {
+            enrollmentService.findByClass(selected).stream()
+                    .filter(e -> e.getStudent().getFullName().toLowerCase().contains(kw)
+                            || e.getClass_().getClassName().toLowerCase().contains(kw))
+                    .forEach(e -> tableModel.addRow(new Object[] {
+                            e.getEnrollmentId(),
+                            e.getStudent().getFullName(),
+                            e.getClass_().getClassName(),
+                            e.getEnrollmentDate(),
+                            e.getStatus(),
+                            e.getResult()
+                    }));
             updateTotalLabel(tableModel.getRowCount());
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
-                "Lỗi tìm kiếm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    "Lỗi tìm kiếm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void updateSiSoLabel() {
         Class_ c = (Class_) cboClass.getSelectedItem();
-        if (c == null) { lblSiSo.setText("Sĩ số: --/--"); return; }
+        if (c == null) {
+            lblSiSo.setText("Sĩ số: --/--");
+            return;
+        }
         try {
             long current = enrollmentService.findByClass(c).stream()
-                .filter(e -> e.getStatus() == Enrollment.EnrollmentStatus.Enrolled)
-                .count();
+                    .filter(e -> e.getStatus() == Enrollment.EnrollmentStatus.Enrolled)
+                    .count();
             lblSiSo.setText("Sĩ số: " + current + " / " + c.getMaxStudent());
             lblSiSo.setForeground(current >= c.getMaxStudent()
-                ? new Color(178, 34, 34) : new Color(46, 139, 87));
-        } catch (Exception ignored) {}
+                    ? new Color(178, 34, 34)
+                    : new Color(46, 139, 87));
+        } catch (Exception ignored) {
+        }
     }
 
     private void updateTotalLabel(int total) {
@@ -241,6 +326,7 @@ public class EnrollmentPanel extends JPanel {
         }
     }
 
+    /** Vẫn giữ các setter để MainFrame/tab cha có thể override nếu cần */
     public void setStudents(List<Student> students) {
         cboStudent.removeAllItems();
         students.forEach(cboStudent::addItem);
@@ -250,11 +336,15 @@ public class EnrollmentPanel extends JPanel {
         cboClass.removeAllItems();
         classes.forEach(cboClass::addItem);
         updateSiSoLabel();
+        loadTable();
     }
 
     private static JButton makeButton(String text, Color bg) {
         JButton btn = new JButton(text);
-        btn.setBackground(bg); btn.setForeground(Color.WHITE);
+        btn.setBackground(bg);
+        btn.setForeground(Color.WHITE);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setFont(new Font("Arial", Font.BOLD, 12));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -266,8 +356,10 @@ public class EnrollmentPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Preview – EnrollmentPanel");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setSize(900, 600); f.add(new EnrollmentPanel());
-            f.setLocationRelativeTo(null); f.setVisible(true);
+            f.setSize(900, 600);
+            f.add(new EnrollmentPanel());
+            f.setLocationRelativeTo(null);
+            f.setVisible(true);
         });
     }
 }

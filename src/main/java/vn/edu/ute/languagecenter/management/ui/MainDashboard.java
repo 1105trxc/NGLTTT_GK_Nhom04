@@ -3,6 +3,10 @@ package vn.edu.ute.languagecenter.management.ui;
 import vn.edu.ute.languagecenter.management.model.Notification;
 import vn.edu.ute.languagecenter.management.model.UserAccount;
 import vn.edu.ute.languagecenter.management.service.HRQueryService;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.AttendancePanel;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.EnrollmentPanel;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.InvoicePaymentPanel;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.ResultPanel;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -34,6 +38,20 @@ public class MainDashboard extends JFrame {
     public static final String CARD_STUDENT = "STUDENT";
     public static final String CARD_BRANCH = "BRANCH";
     public static final String CARD_ACCOUNT = "ACCOUNT";
+
+    // Hệ đào tạo
+    public static final String CARD_COURSE = "COURSE";
+    public static final String CARD_CLASS = "CLASS";
+    public static final String CARD_ROOM = "ROOM";
+    public static final String CARD_SCHEDULE = "SCHEDULE";
+    public static final String CARD_PLACEMENT = "PLACEMENT";
+    public static final String CARD_CERT = "CERTIFICATE";
+
+    // Dịch vụ và tài chính
+    public static final String CARD_ENROLLMENT = "ENROLLMENT";
+    public static final String CARD_ATTENDANCE = "ATTENDANCE";
+    public static final String CARD_RESULT = "RESULT";
+    public static final String CARD_INVOICE = "INVOICE";
 
     // ─── Bảng màu ────────────────────────────────────────────────────────────
     private static final Color C_SIDEBAR = new Color(15, 23, 42); // sidebar đen xanh
@@ -220,30 +238,87 @@ public class MainDashboard extends JFrame {
         sb.setOpaque(false);
         sb.setBorder(new EmptyBorder(16, 0, 16, 0));
 
+        // Bao bọc JScrollPane để phòng khi menu quá dài
+        JPanel innerMenu = new JPanel();
+        innerMenu.setLayout(new BoxLayout(innerMenu, BoxLayout.Y_AXIS));
+        innerMenu.setOpaque(false);
+
         // Nhóm điều hướng
-        addSidebarSection(sb, "TỔNG QUAN");
-        sb.add(menuItem("  Trang Chủ", CARD_HOME, new Color(99, 102, 241)));
+        addSidebarSection(innerMenu, "TỔNG QUAN");
+        innerMenu.add(menuItem("  Trang Chủ", CARD_HOME, new Color(99, 102, 241)));
 
         UserAccount.UserRole role = currentUser.getRole();
 
+        // ═══════════════════════════════════════════════════════════════
+        // PHÂN QUYỀN MENU THEO TÀI LIỆU YÊU CẦU:
+        // Admin - Toàn quyền tất cả chức năng
+        // Staff - Học vụ + Dịch vụ & Tài chính + Nhân sự (trừ Tài khoản)
+        // Teacher - Chỉ xem Lớp của mình, Điểm danh, Nhập điểm
+        // Student - KHÔNG đăng nhập phần mềm nội bộ
+        // ═══════════════════════════════════════════════════════════════
+
+        // ── NGƯỜI 1: HỌC VỤ & ĐÀO TẠO ──────────────────────────────
+        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
+                || role == UserAccount.UserRole.Teacher) {
+            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+        }
         if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
-            addSidebarSection(sb, "NHÂN SỰ");
-            sb.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(16, 185, 129)));
-            sb.add(menuItem("  Học Viên", CARD_STUDENT, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+        } else if (role == UserAccount.UserRole.Teacher) {
+            // Giáo viên chỉ thấy lớp mình dạy và lịch dạy
+            innerMenu.add(menuItem("  Lớp Của Tôi", CARD_CLASS, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Lịch Dạy", CARD_SCHEDULE, new Color(16, 185, 129)));
         }
 
-        if (role == UserAccount.UserRole.Admin) {
-            sb.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
-            addSidebarSection(sb, "HỆ THỐNG");
-            sb.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(139, 92, 246)));
+        // ── NGƯỜI 3: DỊCH VỤ & TÀI CHÍNH ───────────────────────────
+        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
+                || role == UserAccount.UserRole.Teacher) {
+            addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
         }
-
         if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
-            addSidebarSection(sb, "CẤU HÌNH");
-            sb.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(20, 184, 166)));
+            // Admin & Staff quản lý đầy đủ ghi danh, hoá đơn, điểm danh, kết quả
+            innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
+        } else if (role == UserAccount.UserRole.Teacher) {
+            // Giáo viên chỉ được điểm danh và nhập kết quả lớp mình dạy
+            innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Nhập Điểm/KQ", CARD_RESULT, new Color(245, 158, 11)));
         }
 
-        sb.add(Box.createVerticalGlue());
+        // ── NGƯỜI 2: NHÂN SỰ & HỆ THỐNG ────────────────────────────
+        // Student không đăng nhập phần mềm nội bộ → không hiện nhóm này
+        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
+            addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
+            innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
+            innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+            innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
+            if (role == UserAccount.UserRole.Admin) {
+                // Chỉ Admin mới được quản lý Nhân viên và Tài khoản hệ thống
+                innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
+                innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
+            }
+        }
+
+        innerMenu.add(Box.createVerticalGlue());
+
+        JScrollPane scroll = new JScrollPane(innerMenu);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setBorder(null);
+        scroll.getVerticalScrollBar().setUnitIncrement(12);
+
+        // Customize scrollbar if needed or leave it invisible
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        sb.add(scroll);
 
         // Version info
         JLabel ver = new JLabel("  v1.0  |  Nhóm 04 - UTE");
@@ -308,18 +383,56 @@ public class MainDashboard extends JFrame {
         contentPanel = new JPanel(cardLayout);
         contentPanel.setBackground(C_BG);
 
+        // Kiem tra neu la giao vien thi lay ID
+        Long teacherId = null;
+        try {
+            if (currentUser.getRole() == UserAccount.UserRole.Teacher && currentUser.getTeacher() != null) {
+                teacherId = currentUser.getTeacher().getTeacherId();
+            }
+        } catch (Exception ex) {
+            // Catch lazy loading exceptions if any
+            System.err.println("Cannot fetch teacher ID: " + ex.getMessage());
+        }
+
+        // HOME
         contentPanel.add(buildHomePanel(), CARD_HOME);
+
+        // NHAN SU
         contentPanel.add(new TeacherPanel(), CARD_TEACHER);
         contentPanel.add(new StaffPanel(), CARD_STAFF);
         contentPanel.add(new StudentPanel(), CARD_STUDENT);
         contentPanel.add(new BranchPanel(), CARD_BRANCH);
-        contentPanel.add(buildAccountPanel(), CARD_ACCOUNT);
+        contentPanel.add(new AccountPanel(), CARD_ACCOUNT);
+
+        // HOC VU
+        contentPanel.add(new CoursePanel(), CARD_COURSE);
+        contentPanel.add(new ClassPanel(teacherId), CARD_CLASS);
+        contentPanel.add(new RoomPanel(), CARD_ROOM);
+        contentPanel.add(new SchedulePanel(teacherId), CARD_SCHEDULE);
+        contentPanel.add(new PlacementTestPanel(), CARD_PLACEMENT);
+        contentPanel.add(new CertificatePanel(), CARD_CERT);
+
+        // DICH VU
+        contentPanel.add(new EnrollmentPanel(), CARD_ENROLLMENT);
+        contentPanel.add(new AttendancePanel(teacherId), CARD_ATTENDANCE);
+        contentPanel.add(new ResultPanel(teacherId), CARD_RESULT);
+        contentPanel.add(new InvoicePaymentPanel(), CARD_INVOICE);
 
         return contentPanel;
     }
 
     public void showCard(String cardName) {
         cardLayout.show(contentPanel, cardName);
+        for (Component comp : contentPanel.getComponents()) {
+            if (comp.isVisible()) {
+                try {
+                    java.lang.reflect.Method m = comp.getClass().getMethod("refreshData");
+                    m.invoke(comp);
+                } catch (Exception ignored) {
+                }
+                break;
+            }
+        }
     }
 
     // =========================================================================
@@ -435,13 +548,4 @@ public class MainDashboard extends JFrame {
         return card;
     }
 
-    private JPanel buildAccountPanel() {
-        JPanel p = new JPanel(new GridBagLayout());
-        p.setBackground(C_BG);
-        JLabel l = new JLabel("Quản lý Tài Khoản - Đang phát triển");
-        l.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        l.setForeground(new Color(148, 163, 184));
-        p.add(l);
-        return p;
-    }
 }

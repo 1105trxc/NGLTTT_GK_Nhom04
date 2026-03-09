@@ -3,6 +3,7 @@ package vn.edu.ute.languagecenter.management.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -49,6 +50,14 @@ public class Payment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public enum PaymentMethod { Cash, Bank, Momo, ZaloPay, Card, Other }
-    public enum PaymentStatus { Pending, Completed, Failed, Refunded }
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = java.time.LocalDateTime.now();
+        }
+    }
+
+    public enum PaymentMethod {Cash, Bank, Momo, ZaloPay, Card, Other}
+
+    public enum PaymentStatus {Pending, Completed, Failed, Refunded}
 }

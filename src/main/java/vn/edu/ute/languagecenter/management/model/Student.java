@@ -3,6 +3,7 @@ package vn.edu.ute.languagecenter.management.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -75,6 +76,12 @@ public class Student {
     @OneToOne(mappedBy = "student", fetch = FetchType.LAZY)
     private UserAccount userAccount;
 
-    public enum Gender { Male, Female, Other }
-    public enum ActiveStatus { Active, Inactive }
+    @Override
+    public String toString() {
+        return this.getFullName();
+    }
+
+    public enum Gender {Male, Female, Other}
+
+    public enum ActiveStatus {Active, Inactive}
 }

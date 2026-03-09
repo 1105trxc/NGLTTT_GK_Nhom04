@@ -3,6 +3,7 @@ package vn.edu.ute.languagecenter.management.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,8 +12,8 @@ import java.util.List;
 @Setter
 @Entity
 @Table(
-    name = "enrollments",
-    uniqueConstraints = @UniqueConstraint(name = "uq_enrollments_student_class", columnNames = {"student_id", "class_id"})
+        name = "enrollments",
+        uniqueConstraints = @UniqueConstraint(name = "uq_enrollments_student_class", columnNames = {"student_id", "class_id"})
 )
 public class Enrollment {
 
@@ -50,6 +51,15 @@ public class Enrollment {
     @OneToMany(mappedBy = "enrollment", fetch = FetchType.LAZY)
     private List<Payment> payments;
 
-    public enum EnrollmentStatus { Enrolled, Dropped, Completed }
-    public enum ResultStatus { Pass, Fail, NA }
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null || updatedAt == null) {
+            createdAt = LocalDateTime.now();
+            updatedAt = LocalDateTime.now();
+        }
+    }
+
+    public enum EnrollmentStatus {Enrolled, Dropped, Completed}
+
+    public enum ResultStatus {Pass, Fail, NA}
 }
