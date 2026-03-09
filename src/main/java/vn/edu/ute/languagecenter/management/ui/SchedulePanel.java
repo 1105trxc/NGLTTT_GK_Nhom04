@@ -29,10 +29,12 @@ public class SchedulePanel extends JPanel {
     private JDateChooser dcDate;
     private JTextField txtStartTime, txtEndTime;
     private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnLoadByClass;
+    private Long teacherId;
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
 
-    public SchedulePanel() {
+    public SchedulePanel(Long teacherId) {
+        this.teacherId = teacherId;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
@@ -173,9 +175,11 @@ public class SchedulePanel extends JPanel {
     private void loadCombos() {
         cboClass.removeAllItems();
         try {
-            for (Class_ c : classService.findAll())
+            List<Class_> classes = teacherId != null ? classService.findByTeacherId(teacherId) : classService.findAll();
+            for (Class_ c : classes)
                 cboClass.addItem(new ClassItem(c.getClassId(), c.getClassName()));
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
         }
 
         cboRoom.removeAllItems();
@@ -211,10 +215,29 @@ public class SchedulePanel extends JPanel {
         }
     }
 
+    private void setSelectedComboItem(JComboBox<?> cbo, String name) {
+        if (name == null || name.isEmpty()) {
+            if (cbo.getItemCount() > 0)
+                cbo.setSelectedIndex(0);
+            return;
+        }
+        for (int i = 0; i < cbo.getItemCount(); i++) {
+            Object obj = cbo.getItemAt(i);
+            if (obj != null && obj.toString().equals(name)) {
+                cbo.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
     private void fillForm() {
         int row = table.getSelectedRow();
         if (row < 0)
             return;
+
+        setSelectedComboItem(cboClass, (String) tableModel.getValueAt(row, 1));
+        setSelectedComboItem(cboRoom, (String) tableModel.getValueAt(row, 5));
+
         Object d = tableModel.getValueAt(row, 2);
         DateUtil.setLocalDate(dcDate, d instanceof LocalDate ? (LocalDate) d : null);
         txtStartTime.setText((String) tableModel.getValueAt(row, 3));
@@ -254,6 +277,14 @@ public class SchedulePanel extends JPanel {
         try {
             Long id = (Long) tableModel.getValueAt(row, 0);
             Schedule s = scheduleService.findById(id).orElseThrow();
+
+            if (teacherId != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
+                    || !s.getClass_().getTeacher().getTeacherId().equals(teacherId))) {
+                JOptionPane.showMessageDialog(this, "Bạn chỉ được cập nhật lịch của lớp do mình phụ trách.",
+                        "Lỗi phân quyền", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             ClassItem ci = (ClassItem) cboClass.getSelectedItem();
             if (ci != null)
                 s.setClass_(classService.findById(ci.id).orElseThrow());
@@ -286,6 +317,15 @@ public class SchedulePanel extends JPanel {
             return;
         try {
             Long id = (Long) tableModel.getValueAt(row, 0);
+            Schedule s = scheduleService.findById(id).orElseThrow();
+
+            if (teacherId != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
+                    || !s.getClass_().getTeacher().getTeacherId().equals(teacherId))) {
+                JOptionPane.showMessageDialog(this, "Bạn chỉ được xóa lịch của lớp do mình phụ trách.",
+                        "Lỗi phân quyền", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             scheduleService.deleteById(id);
             JOptionPane.showMessageDialog(this, "Xóa thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             clearForm();

@@ -170,11 +170,13 @@ public class PlacementTestPanel extends JPanel {
         cboStudent.removeAllItems();
         try {
             EntityManager em = Jpa.em();
-            List<Student> students = em.createQuery("SELECT s FROM Student s WHERE s.status = 'Active'", Student.class)
-                    .getResultList();
+            List<Student> students = em.createQuery("SELECT s FROM Student s", Student.class).getResultList();
             em.close();
-            for (Student s : students)
-                cboStudent.addItem(new StudentItem(s.getStudentId(), s.getFullName()));
+            for (Student s : students) {
+                if (s.getStatus() != null && s.getStatus().name().equals("Active")) {
+                    cboStudent.addItem(new StudentItem(s.getStudentId(), s.getFullName()));
+                }
+            }
         } catch (Exception ignored) {
         }
     }
