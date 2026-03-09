@@ -1,8 +1,10 @@
 package vn.edu.ute.languagecenter.management.ui;
 
+import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Notification;
 import vn.edu.ute.languagecenter.management.model.UserAccount;
 import vn.edu.ute.languagecenter.management.repo.jpa.JpaNotificationRepository;
+import vn.edu.ute.languagecenter.management.service.ClassService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -14,11 +16,14 @@ import java.util.List;
 public class NotificationPanel extends JPanel {
 
     private final JpaNotificationRepository notificationRepo = new JpaNotificationRepository();
+    private final ClassService classService = new ClassService();
     private final UserAccount currentUser;
 
     private JTextField txtTitle;
     private JTextArea txtContent;
     private JComboBox<Notification.TargetRole> cmbTargetRole;
+    private JComboBox<ClassItem> cmbClass; // Chỉ cho Teacher
+    private JLabel lblClass;
     private JButton btnSend;
 
     private static final Color COLOR_BG = new Color(245, 247, 250);
@@ -78,6 +83,37 @@ public class NotificationPanel extends JPanel {
         cmbTargetRole.setAlignmentX(Component.LEFT_ALIGNMENT);
         form.add(cmbTargetRole);
         form.add(Box.createVerticalStrut(20));
+
+        // ── Phần chọn lớp cụ thể - Chỉ dành cho Teacher ─────────────────────
+        boolean isTeacher = currentUser.getRole() == UserAccount.UserRole.Teacher;
+
+        lblClass = new JLabel("Gửi đến lớp cụ thể (tuỳ chọn)");
+        lblClass.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblClass.setAlignmentX(Component.LEFT_ALIGNMENT);
+        lblClass.setVisible(isTeacher);
+        form.add(lblClass);
+        form.add(Box.createVerticalStrut(5));
+
+        cmbClass = new JComboBox<>();
+        cmbClass.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmbClass.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        cmbClass.setAlignmentX(Component.LEFT_ALIGNMENT);
+        cmbClass.setVisible(isTeacher);
+
+        if (isTeacher && currentUser.getTeacher() != null) {
+            try {
+                cmbClass.addItem(new ClassItem(null, "-- Tất cả học viên lớp đang dạy --"));
+                List<Class_> teacherClasses = classService.findByTeacherId(currentUser.getTeacher().getTeacherId());
+                for (Class_ c : teacherClasses) {
+                    cmbClass.addItem(new ClassItem(c.getClassId(), c.getClassName()));
+                }
+            } catch (Exception ex) {
+                System.err.println("Không load được danh sách lớp: " + ex.getMessage());
+            }
+        }
+        form.add(cmbClass);
+        form.add(Box.createVerticalStrut(20));
+        // ──────────────────────────────────────────────────────────────────────
 
         JLabel lblContent = new JLabel("Nội dung thông báo (*)");
         lblContent.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -164,13 +200,34 @@ public class NotificationPanel extends JPanel {
             return;
         }
 
-        int conf = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn gửi thông báo này?", "Xác nhận",
-                JOptionPane.YES_NO_OPTION);
+        // Nếu là Teacher và chọn lớp cụ thể, thêm thông tin lớp vào tiêu đề
+        String finalTitle = title;
+        String finalContent = content;
+        if (currentUser.getRole() == UserAccount.UserRole.Teacher && cmbClass.isVisible()) {
+            ClassItem selectedClass = (ClassItem) cmbClass.getSelectedItem();
+            if (selectedClass != null && selectedClass.id() != null) {
+                // Gắn tên lớp vào tiêu đề nếu chọn lớp cụ thể
+                finalTitle = "[" + selectedClass.name() + "] " + title;
+                finalContent = "📌 Lớp: " + selectedClass.name() + "\n\n" + content;
+            }
+        }
+
+        String confirmMsg = "Bạn có chắc muốn gửi thông báo này?";
+        if (currentUser.getRole() == UserAccount.UserRole.Teacher) {
+            ClassItem selectedClass = (ClassItem) cmbClass.getSelectedItem();
+            if (selectedClass != null && selectedClass.id() != null) {
+                confirmMsg = "Gửi thông báo đến học viên lớp \"" + selectedClass.name() + "\"?";
+            } else {
+                confirmMsg = "Gửi thông báo đến tất cả học viên trong các lớp bạn phụ trách?";
+            }
+        }
+
+        int conf = JOptionPane.showConfirmDialog(this, confirmMsg, "Xác nhận", JOptionPane.YES_NO_OPTION);
         if (conf == JOptionPane.YES_OPTION) {
             try {
                 Notification notif = new Notification();
-                notif.setTitle(title);
-                notif.setContent(content);
+                notif.setTitle(finalTitle);
+                notif.setContent(finalContent);
                 notif.setTargetRole(targetRole);
                 notif.setCreatedByUser(currentUser);
                 notif.setCreatedAt(LocalDateTime.now());
@@ -184,6 +241,14 @@ public class NotificationPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Lỗi khi gửi thông báo: " + ex.getMessage(), "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    /** Wrapper class cho item trong combobox lớp */
+    private record ClassItem(Long id, String name) {
+        @Override
+        public String toString() {
+            return name;
         }
     }
 }

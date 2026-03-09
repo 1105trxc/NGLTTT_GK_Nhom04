@@ -4,10 +4,11 @@ import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Enrollment;
 import vn.edu.ute.languagecenter.management.model.Result;
 import vn.edu.ute.languagecenter.management.model.Student;
-import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.EnrollmentService;
 import vn.edu.ute.languagecenter.management.service.ResultService;
+
+import vn.edu.ute.languagecenter.management.model.UserAccount;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -37,7 +38,7 @@ public class ResultPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextArea txaStats;
     private TableModelListener gradeAutoCalcListener;
-    private Long currentTeacherId;
+    private UserAccount currentUser;
 
     private static final int COL_ID = 0;
     private static final int COL_NAME = 1;
@@ -45,14 +46,17 @@ public class ResultPanel extends JPanel {
     private static final int COL_GRADE = 3;
     private static final int COL_COMMENT = 4;
 
-    public ResultPanel(Long teacherId) {
-        this.currentTeacherId = teacherId;
+    public ResultPanel(UserAccount currentUser) {
+        this.currentUser = currentUser;
         setLayout(new BorderLayout(10, 10));
         setBorder(new EmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
         add(buildTopPanel(), BorderLayout.NORTH);
         add(buildTablePanel(), BorderLayout.CENTER);
-        add(buildStatsPanel(), BorderLayout.EAST);
+        // Chỉ hiển thị Thống Kê cho Admin, Staff, Teacher - không hiển thị cho Student
+        if (currentUser == null || currentUser.getRole() != UserAccount.UserRole.Student) {
+            add(buildStatsPanel(), BorderLayout.EAST);
+        }
 
         // Tự load danh sách lớp ngay khi khởi tạo
         refreshClassCombo();
@@ -64,8 +68,14 @@ public class ResultPanel extends JPanel {
             List<Class_> classes;
 
             // Nếu có ID giáo viên, lọc lớp theo giáo viên đó
-            if (currentTeacherId != null) {
-                classes = classService.findByTeacherId(currentTeacherId);
+            if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Teacher
+                    && currentUser.getTeacher() != null) {
+                classes = classService.findByTeacherId(currentUser.getTeacher().getTeacherId());
+            } else if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student
+                    && currentUser.getStudent() != null) {
+                classes = enrollmentService.findByStudent(currentUser.getStudent()).stream()
+                        .map(Enrollment::getClass_)
+                        .collect(Collectors.toList());
             }
             // Ngược lại (ví dụ Admin/Staff đăng nhập), load tất cả lớp
             else {
@@ -113,6 +123,12 @@ public class ResultPanel extends JPanel {
         btnPanel.add(btnSaveAll);
         btnPanel.add(btnExportStats);
         btnPanel.add(btnRefresh);
+
+        if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student) {
+            btnSaveAll.setVisible(false);
+            btnExportStats.setVisible(false);
+        }
+
         g.gridx = 0;
         g.gridy = 1;
         g.gridwidth = 3;
@@ -134,6 +150,8 @@ public class ResultPanel extends JPanel {
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
+                if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student)
+                    return false;
                 return c == COL_SCORE || c == COL_COMMENT;
             }
         };
@@ -252,6 +270,13 @@ public class ResultPanel extends JPanel {
                     .filter(e -> e.getStatus() == Enrollment.EnrollmentStatus.Enrolled
                             || e.getStatus() == Enrollment.EnrollmentStatus.Completed)
                     .map(Enrollment::getStudent)
+                    .filter(s -> {
+                        if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student
+                                && currentUser.getStudent() != null) {
+                            return s.getStudentId().equals(currentUser.getStudent().getStudentId());
+                        }
+                        return true;
+                    })
                     .sorted(Comparator.comparing(Student::getFullName))
                     .collect(Collectors.toList());
 
@@ -370,9 +395,7 @@ public class ResultPanel extends JPanel {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame("Preview – ResultPanel");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setSize(900, 600);
-            f.add(new ResultPanel(2L));
-            f.setLocationRelativeTo(null);
+            f.add(new ResultPanel(null));
             f.setVisible(true);
         });
     }
