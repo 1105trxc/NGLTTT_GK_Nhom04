@@ -1,6 +1,7 @@
 package vn.edu.ute.languagecenter.management.ui;
 
 import vn.edu.ute.languagecenter.management.model.Notification;
+import vn.edu.ute.languagecenter.management.model.Staff;
 import vn.edu.ute.languagecenter.management.model.UserAccount;
 import vn.edu.ute.languagecenter.management.service.HRQueryService;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.AttendancePanel;
@@ -72,8 +73,8 @@ public class MainDashboard extends JFrame {
     private void initUI() {
         setTitle("Quản Lý Trung Tâm Ngoại Ngữ");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1180, 720);
-        setMinimumSize(new Dimension(950, 580));
+        setSize(1300, 780);
+        setMinimumSize(new Dimension(1000, 620));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -168,7 +169,19 @@ public class MainDashboard extends JFrame {
         JLabel nameL = new JLabel(currentUser.getUsername());
         nameL.setFont(new Font("Segoe UI", Font.BOLD, 12));
         nameL.setForeground(Color.WHITE);
-        JLabel roleL = new JLabel(currentUser.getRole().name());
+
+        // Với Staff: hiển thị "Staff – Consultant" thay vì chỉ "Staff"
+        String roleDisplay = currentUser.getRole().name();
+        if (currentUser.getRole() == UserAccount.UserRole.Staff && currentUser.getStaff() != null) {
+            try {
+                Staff.StaffRole sr = currentUser.getStaff().getRole();
+                if (sr != null && sr != Staff.StaffRole.Other && sr != Staff.StaffRole.Admin) {
+                    roleDisplay = "Staff – " + sr.name();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        JLabel roleL = new JLabel(roleDisplay);
         roleL.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         roleL.setForeground(C_TEXT_MUTED);
         nameBox.add(nameL);
@@ -176,13 +189,12 @@ public class MainDashboard extends JFrame {
         userInfo.add(nameBox);
         right.add(userInfo);
 
-        // Separator
+        // Separator + nút logout
         JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
         sep.setForeground(new Color(50, 65, 90));
         sep.setPreferredSize(new Dimension(1, 30));
         right.add(sep);
 
-        // Nút logout
         JButton btnOut = new JButton("Đăng xuất") {
             @Override
             protected void paintComponent(Graphics g) {
@@ -250,10 +262,7 @@ public class MainDashboard extends JFrame {
 
         UserAccount.UserRole role = currentUser.getRole();
 
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
-                || role == UserAccount.UserRole.Teacher) {
-            innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
-        }
+        // Bell button in header xử lý gửi thông báo – không thêm mục sidebar nữa
 
         // ═══════════════════════════════════════════════════════════════
         // PHÂN QUYỀN MENU THEO TÀI LIỆU YÊU CẦU:
@@ -263,58 +272,112 @@ public class MainDashboard extends JFrame {
         // Student - KHÔNG đăng nhập phần mềm nội bộ
         // ═══════════════════════════════════════════════════════════════
 
-        // ── NGƯỜI 1: HỌC VỤ & ĐÀO TẠO ──────────────────────────────
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
-                || role == UserAccount.UserRole.Teacher) {
-            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+        // ── STAFF – phân quyền theo từng StaffRole ─────────────────────
+        if (role == UserAccount.UserRole.Staff) {
+            Staff.StaffRole staffRole = Staff.StaffRole.Other;
+            try {
+                if (currentUser.getStaff() != null)
+                    staffRole = currentUser.getStaff().getRole();
+            } catch (Exception ignored) {
+            }
+
+            switch (staffRole) {
+                case Consultant -> {
+                    // ── Cố vấn: tư vấn + ghi danh + học viên ───────────────
+                    innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+                    addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+                    innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+                    addSidebarSection(innerMenu, "KếT QUẢ & ĐIỂM DANH");
+                    innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
+                }
+                case Accountant -> {
+                    // ── Kế toán: chỉ hóa đơn + chứng chỉ ────────────────────
+                    innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+                    addSidebarSection(innerMenu, "TÀI CHÍNH");
+                    innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
+                    addSidebarSection(innerMenu, "HỌC VỤ");
+                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+                }
+                case Manager -> {
+                    // ── Quản lý: điều phối toàn bộ ──────────────────
+                    innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+                    addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+                    innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(16, 185, 129)));
+                    addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
+                    innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
+                }
+                default -> {
+                    // Other hoặc Admin-Staff: fallback giống Staff cũ
+                    addSidebarSection(innerMenu, "HỌc VỤ & ĐÀO TẠO");
+                    innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+                    addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
+                    innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
+                    addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
+                    innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
+                }
+            }
         }
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
+        // ── TEACHER ─────────────────────────────────────────────────────
+        if (role == UserAccount.UserRole.Teacher) {
+            innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+            innerMenu.add(menuItem("  Lớp Của Tôi", CARD_CLASS, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Lịch Dạy", CARD_SCHEDULE, new Color(16, 185, 129)));
+            addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
+            innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Nhập Điểm/KQ", CARD_RESULT, new Color(245, 158, 11)));
+        }
+
+        // ── STUDENT ─────────────────────────────────────────────────────
+        if (role == UserAccount.UserRole.Student) {
+            addSidebarSection(innerMenu, "HỌC TẬP");
+            innerMenu.add(menuItem("  Lịch Học Của Tôi", CARD_SCHEDULE, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Điểm Của Tôi", CARD_RESULT, new Color(245, 158, 11)));
+        }
+
+        // ── ADMIN ─────────────────────────────────────────────────────
+        if (role == UserAccount.UserRole.Admin) {
+            innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
             innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
-        } else if (role == UserAccount.UserRole.Teacher) {
-            // Giáo viên chỉ thấy lớp mình dạy và lịch dạy
-            innerMenu.add(menuItem("  Lớp Của Tôi", CARD_CLASS, new Color(16, 185, 129)));
-            innerMenu.add(menuItem("  Lịch Dạy", CARD_SCHEDULE, new Color(16, 185, 129)));
-        } else if (role == UserAccount.UserRole.Student) {
-            // Student thấy Lịch Học và Điểm của mình
-            addSidebarSection(innerMenu, "HỌC TẬP");
-            innerMenu.add(menuItem("  Lịch Học Của Tôi", CARD_SCHEDULE, new Color(16, 185, 129)));
-            innerMenu.add(menuItem("  Điểm Của Tôi", CARD_RESULT, new Color(245, 158, 11)));
-        }
-
-        // ── NGƯỜI 3: DỊCH VỤ & TÀI CHÍNH ───────────────────────────
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
-                || role == UserAccount.UserRole.Teacher) {
             addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
-        }
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
-            // Admin & Staff quản lý đầy đủ ghi danh, hoá đơn, điểm danh, kết quả
             innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
-        } else if (role == UserAccount.UserRole.Teacher) {
-            // Giáo viên chỉ được điểm danh và nhập kết quả lớp mình dạy
-            innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
-            innerMenu.add(menuItem("  Nhập Điểm/KQ", CARD_RESULT, new Color(245, 158, 11)));
-        }
-
-        // ── NGƯỜI 2: NHÂN SỰ & HỆ THỐNG ────────────────────────────
-        // Student không đăng nhập phần mềm nội bộ → không hiện nhóm này
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
             addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
             innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+            innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
-            if (role == UserAccount.UserRole.Admin) {
-                // Chỉ Admin mới được quản lý Nhân viên và Tài khoản hệ thống
-                innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
-                innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
-            }
+            innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
+
         }
 
         innerMenu.add(Box.createVerticalGlue());

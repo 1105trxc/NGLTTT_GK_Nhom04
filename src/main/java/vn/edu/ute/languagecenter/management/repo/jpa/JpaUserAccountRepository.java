@@ -34,7 +34,12 @@ public class JpaUserAccountRepository extends GenericRepository<UserAccount>
     public Optional<UserAccount> login(String username, String passwordHash) {
         EntityManager em = getEntityManager();
         try {
+            // Dùng LEFT JOIN FETCH để eager-load teacher/staff/student
+            // tránh LazyInitializationException sau khi em.close()
             String hql = "SELECT u FROM UserAccount u " +
+                    "LEFT JOIN FETCH u.teacher " +
+                    "LEFT JOIN FETCH u.staff " +
+                    "LEFT JOIN FETCH u.student " +
                     "WHERE u.username = :username " +
                     "  AND u.passwordHash = :pwd " +
                     "  AND u.isActive = true";
