@@ -52,6 +52,7 @@ public class StudentPanel extends JPanel {
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lbl.setForeground(new Color(25, 55, 95));
         panel.add(lbl, BorderLayout.WEST);
+
         JPanel sp = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         sp.setOpaque(false);
         txtSearch = new JTextField(18);
@@ -60,9 +61,39 @@ public class StudentPanel extends JPanel {
         JButton btnRefresh = new JButton("↻ Làm mới");
         styleBtn(btnSearch, COLOR_PRIMARY);
         styleBtn(btnRefresh, new Color(80, 120, 80));
+
+        // Vẫn giữ sự kiện cho nút Tìm nếu người dùng có thói quen click
         btnSearch.addActionListener(e -> searchData());
-        txtSearch.addActionListener(e -> searchData());
-        btnRefresh.addActionListener(e -> loadData());
+
+        // --- BẮT ĐẦU: LIVE SEARCH ---
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            private void doLiveSearch() {
+                // Sử dụng SwingUtilities.invokeLater để giao diện mượt mà không bị giật lag khi gõ
+                SwingUtilities.invokeLater(() -> searchData());
+            }
+        });
+        // --- KẾT THÚC: LIVE SEARCH ---
+
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText(""); // Xóa trắng ô tìm kiếm
+            loadData();
+        });
+
         sp.add(new JLabel("Tìm: "));
         sp.add(txtSearch);
         sp.add(btnSearch);
@@ -72,7 +103,7 @@ public class StudentPanel extends JPanel {
     }
 
     private JScrollPane buildCenter() {
-        String[] cols = { "ID", "Họ Tên", "Ngày Sinh", "Giới Tính", "Điện Thoại", "Email", "Ngày ĐK", "Trạng Thái" };
+        String[] cols = {"ID", "Họ Tên", "Ngày Sinh", "Giới Tính", "Điện Thoại", "Email", "Ngày ĐK", "Trạng Thái"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -170,7 +201,7 @@ public class StudentPanel extends JPanel {
         tableModel.setRowCount(0);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         for (Student s : studentService.getAllStudents()) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     s.getStudentId(), s.getFullName(),
                     s.getDateOfBirth() != null ? s.getDateOfBirth().format(fmt) : "",
                     s.getGender(), s.getPhone(), s.getEmail(),
@@ -181,7 +212,9 @@ public class StudentPanel extends JPanel {
         clearForm();
     }
 
-    /** Lọc học viên bằng Java Stream Lambda (filter + forEach). */
+    /**
+     * Lọc học viên bằng Java Stream Lambda (filter + forEach).
+     */
     private void searchData() {
         String kw = txtSearch.getText().trim().toLowerCase();
         if (kw.isEmpty()) {
@@ -191,10 +224,12 @@ public class StudentPanel extends JPanel {
         tableModel.setRowCount(0);
         List<Student> list = studentService.getAllStudents();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
         list.stream()
                 .filter(s -> (s.getFullName() != null && s.getFullName().toLowerCase().contains(kw))
-                        || (s.getEmail() != null && s.getEmail().toLowerCase().contains(kw)))
-                .forEach(s -> tableModel.addRow(new Object[] {
+                        || (s.getEmail() != null && s.getEmail().toLowerCase().contains(kw))
+                        || (s.getPhone() != null && s.getPhone().contains(kw))) // Mình bổ sung tìm theo cả SĐT
+                .forEach(s -> tableModel.addRow(new Object[]{
                         s.getStudentId(), s.getFullName(),
                         s.getDateOfBirth() != null ? s.getDateOfBirth().format(fmt) : "",
                         s.getGender(), s.getPhone(), s.getEmail(),
@@ -239,6 +274,8 @@ public class StudentPanel extends JPanel {
             s.setStatus((Student.ActiveStatus) cmbStatus.getSelectedItem());
             studentService.addStudent(s);
             JOptionPane.showMessageDialog(this, "✅ Thêm học viên thành công!");
+
+            txtSearch.setText(""); // Xóa ô tìm kiếm nếu đang gõ dở
             loadData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -263,7 +300,8 @@ public class StudentPanel extends JPanel {
             s.setStatus((Student.ActiveStatus) cmbStatus.getSelectedItem());
             studentService.updateStudent(s);
             JOptionPane.showMessageDialog(this, "✅ Cập nhật học viên thành công!");
-            loadData();
+
+            searchData(); // Giữ nguyên kết quả tìm kiếm hiện tại sau khi sửa
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -279,7 +317,9 @@ public class StudentPanel extends JPanel {
             try {
                 studentService.deleteStudent(selectedStudentId);
                 JOptionPane.showMessageDialog(this, "✅ Xóa học viên thành công!");
-                loadData();
+
+                searchData(); // Cập nhật lại danh sách hiện tại thay vì load lại toàn bộ
+                clearForm();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "❌ Lỗi khi xóa: " + ex.getMessage(), "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
@@ -334,7 +374,9 @@ public class StudentPanel extends JPanel {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 
-    /** Chấp nhận cả dd/MM/yyyy lẫn yyyy-MM-dd */
+    /**
+     * Chấp nhận cả dd/MM/yyyy lẫn yyyy-MM-dd
+     */
     private LocalDate parseDate(String s) {
         try {
             return LocalDate.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd"));

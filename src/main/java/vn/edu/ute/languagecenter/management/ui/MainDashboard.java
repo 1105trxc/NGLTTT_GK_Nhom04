@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * MainDashboard - Giao diện chính sau khi đăng nhập.
  * Package: gui.operation (skill swing-module-builder - Người 2)
- *
+ * <p>
  * Layout: Header (top) | Sidebar (left, 230px) | ContentPanel (center,
  * CardLayout)
  * Phân quyền sidebar theo UserRole.
@@ -72,7 +72,7 @@ public class MainDashboard extends JFrame {
     private void initUI() {
         setTitle("Quản Lý Trung Tâm Ngoại Ngữ");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1180, 720);
+        setSize(1180, 750);
         setMinimumSize(new Dimension(950, 580));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -255,14 +255,6 @@ public class MainDashboard extends JFrame {
             innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // PHÂN QUYỀN MENU THEO TÀI LIỆU YÊU CẦU:
-        // Admin - Toàn quyền tất cả chức năng
-        // Staff - Học vụ + Dịch vụ & Tài chính + Nhân sự (trừ Tài khoản)
-        // Teacher - Chỉ xem Lớp của mình, Điểm danh, Nhập điểm
-        // Student - KHÔNG đăng nhập phần mềm nội bộ
-        // ═══════════════════════════════════════════════════════════════
-
         // ── NGƯỜI 1: HỌC VỤ & ĐÀO TẠO ──────────────────────────────
         if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
                 || role == UserAccount.UserRole.Teacher) {
@@ -276,7 +268,6 @@ public class MainDashboard extends JFrame {
             innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
         } else if (role == UserAccount.UserRole.Teacher) {
-            // Giáo viên chỉ thấy lớp mình dạy và lịch dạy
             innerMenu.add(menuItem("  Lớp Của Tôi", CARD_CLASS, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Lịch Dạy", CARD_SCHEDULE, new Color(16, 185, 129)));
         }
@@ -287,26 +278,22 @@ public class MainDashboard extends JFrame {
             addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
         }
         if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
-            // Admin & Staff quản lý đầy đủ ghi danh, hoá đơn, điểm danh, kết quả
             innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
         } else if (role == UserAccount.UserRole.Teacher) {
-            // Giáo viên chỉ được điểm danh và nhập kết quả lớp mình dạy
             innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Nhập Điểm/KQ", CARD_RESULT, new Color(245, 158, 11)));
         }
 
         // ── NGƯỜI 2: NHÂN SỰ & HỆ THỐNG ────────────────────────────
-        // Student không đăng nhập phần mềm nội bộ → không hiện nhóm này
         if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
             addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
             innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
             if (role == UserAccount.UserRole.Admin) {
-                // Chỉ Admin mới được quản lý Nhân viên và Tài khoản hệ thống
                 innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
                 innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
             }
@@ -320,9 +307,11 @@ public class MainDashboard extends JFrame {
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
 
-        // Customize scrollbar if needed or leave it invisible
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        // --- FIX LỖI SCROLLBAR Ở ĐÂY ---
+        // Tắt khả năng hiển thị của Scrollbar nhưng vẫn giữ khả năng cuộn chuột
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
 
         sb.add(scroll);
 
@@ -396,7 +385,6 @@ public class MainDashboard extends JFrame {
                 teacherId = currentUser.getTeacher().getTeacherId();
             }
         } catch (Exception ex) {
-            // Catch lazy loading exceptions if any
             System.err.println("Cannot fetch teacher ID: " + ex.getMessage());
         }
 
@@ -515,6 +503,10 @@ public class MainDashboard extends JFrame {
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
+
+        // --- Ẩn Scrollbar màn hình chính ---
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
 
         mid.add(scroll, BorderLayout.SOUTH);
         p.add(mid, BorderLayout.CENTER);

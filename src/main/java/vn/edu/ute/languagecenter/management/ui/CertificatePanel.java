@@ -5,10 +5,12 @@ import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Student;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.ExamAndCertService;
-import vn.edu.ute.languagecenter.management.db.Jpa;
+import vn.edu.ute.languagecenter.management.service.StudentService;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.ClassSelectionDialog;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.StudentSelectionDialog;
 
 import com.toedter.calendar.JDateChooser;
-import jakarta.persistence.EntityManager;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -17,13 +19,24 @@ import java.util.List;
 
 public class CertificatePanel extends JPanel {
 
+    // ── Services ──────────────────────────────────────────────────────────────
     private final ExamAndCertService service = new ExamAndCertService();
     private final ClassService classService = new ClassService();
+    private final StudentService studentService = new StudentService();
 
+    // ── Components ────────────────────────────────────────────────────────────
     private JTable table;
     private DefaultTableModel tableModel;
-    private JComboBox<StudentItem> cboStudent;
-    private JComboBox<ClassItem> cboClass;
+
+    // Thay thế ComboBox bằng các trường TextField và Button
+    private Student selectedStudent = null;
+    private JTextField txtStudentName;
+    private JButton btnSelectStudent;
+
+    private Class_ selectedClass = null;
+    private JTextField txtClassName;
+    private JButton btnSelectClass;
+
     private JTextField txtCertName, txtSerialNo;
     private JDateChooser dcIssueDate;
     private JButton btnAdd, btnDelete, btnClear, btnRefresh;
@@ -43,23 +56,49 @@ public class CertificatePanel extends JPanel {
                 BorderFactory.createLineBorder(new Color(100, 149, 237), 1),
                 "Cấp Chứng Chỉ", javax.swing.border.TitledBorder.LEFT, javax.swing.border.TitledBorder.TOP,
                 new Font("Arial", Font.BOLD, 13), new Color(25, 25, 112)));
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // 1. CHỌN HỌC VIÊN
         gbc.gridx = 0;
         gbc.gridy = 0;
         formPanel.add(new JLabel("Học viên:"), gbc);
-        gbc.gridx = 1;
-        cboStudent = new JComboBox<>();
-        formPanel.add(cboStudent, gbc);
 
+        txtStudentName = createTextField(20);
+        txtStudentName.setEditable(false);
+        txtStudentName.setText("Chưa chọn học viên...");
+        btnSelectStudent = new JButton("🔍");
+        btnSelectStudent.setToolTipText("Mở danh sách tìm kiếm học viên");
+
+        JPanel pnlStudentSelect = new JPanel(new BorderLayout(5, 0));
+        pnlStudentSelect.setOpaque(false);
+        pnlStudentSelect.add(txtStudentName, BorderLayout.CENTER);
+        pnlStudentSelect.add(btnSelectStudent, BorderLayout.EAST);
+
+        gbc.gridx = 1;
+        formPanel.add(pnlStudentSelect, gbc);
+
+        // 2. CHỌN LỚP HỌC
         gbc.gridx = 2;
         formPanel.add(new JLabel("Lớp học:"), gbc);
-        gbc.gridx = 3;
-        cboClass = new JComboBox<>();
-        formPanel.add(cboClass, gbc);
 
+        txtClassName = createTextField(20);
+        txtClassName.setEditable(false);
+        txtClassName.setText("Chưa chọn lớp học...");
+        btnSelectClass = new JButton("🔍");
+        btnSelectClass.setToolTipText("Mở danh sách tìm kiếm lớp học");
+
+        JPanel pnlClassSelect = new JPanel(new BorderLayout(5, 0));
+        pnlClassSelect.setOpaque(false);
+        pnlClassSelect.add(txtClassName, BorderLayout.CENTER);
+        pnlClassSelect.add(btnSelectClass, BorderLayout.EAST);
+
+        gbc.gridx = 3;
+        formPanel.add(pnlClassSelect, gbc);
+
+        // 3. TÊN CHỨNG CHỈ & CÁC THÔNG TIN KHÁC
         gbc.gridx = 0;
         gbc.gridy = 1;
         formPanel.add(new JLabel("Tên chứng chỉ:"), gbc);
@@ -83,6 +122,7 @@ public class CertificatePanel extends JPanel {
         txtSerialNo = createTextField(15);
         formPanel.add(txtSerialNo, gbc);
 
+        // --- BUTTONS ---
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
         btnAdd = makeButton("✅ Cấp chứng chỉ", new Color(46, 139, 87));
@@ -103,7 +143,8 @@ public class CertificatePanel extends JPanel {
 
         add(formPanel, BorderLayout.NORTH);
 
-        String[] cols = { "ID", "Học viên", "Lớp", "Tên chứng chỉ", "Ngày cấp", "Serial" };
+        // --- TABLE THIẾT LẬP ---
+        String[] cols = {"ID", "Học viên", "Lớp", "Tên chứng chỉ", "Ngày cấp", "Serial"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -148,47 +189,63 @@ public class CertificatePanel extends JPanel {
         bottomPanel.add(lblTotal);
         add(bottomPanel, BorderLayout.SOUTH);
 
+        // --- GẮN SỰ KIỆN NÚT CHỌN ---
+        btnSelectStudent.addActionListener(e -> openStudentDialog());
+        btnSelectClass.addActionListener(e -> openClassDialog());
+
         btnAdd.addActionListener(e -> addCert());
         btnDelete.addActionListener(e -> deleteCert());
         btnClear.addActionListener(e -> clearForm());
         btnRefresh.addActionListener(e -> refreshData());
     }
 
-    public void refreshData() {
-        loadCombos();
+    private void openStudentDialog() {
         try {
-            loadTable(service.findAllCerts());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            List<Student> activeStudents = studentService.getActiveStudents();
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            StudentSelectionDialog dialog = new StudentSelectionDialog(parentWindow, activeStudents);
+            dialog.setVisible(true);
+
+            Student s = dialog.getSelectedStudent();
+            if (s != null) {
+                selectedStudent = s;
+                txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải học viên: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadCombos() {
-        cboStudent.removeAllItems();
+    private void openClassDialog() {
         try {
-            EntityManager em = Jpa.em();
-            List<Student> students = em.createQuery("SELECT s FROM Student s", Student.class).getResultList();
-            em.close();
-            for (Student s : students) {
-                if (s.getStatus() != null && s.getStatus().name().equals("Active")) {
-                    cboStudent.addItem(new StudentItem(s.getStudentId(), s.getFullName()));
-                }
-            }
-        } catch (Exception ignored) {
-        }
+            List<Class_> allClasses = classService.findAll();
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            ClassSelectionDialog dialog = new ClassSelectionDialog(parentWindow, allClasses);
+            dialog.setVisible(true);
 
-        cboClass.removeAllItems();
+            Class_ c = dialog.getSelectedClass();
+            if (c != null) {
+                selectedClass = c;
+                txtClassName.setText(c.getClassName());
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải lớp học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void refreshData() {
         try {
-            for (Class_ c : classService.findAll())
-                cboClass.addItem(new ClassItem(c.getClassId(), c.getClassName()));
-        } catch (Exception ignored) {
+            loadTable(service.findAllCerts());
+            clearForm();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
         }
     }
 
     private void loadTable(List<Certificate> certs) {
         tableModel.setRowCount(0);
         for (Certificate c : certs) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     c.getCertificateId(),
                     c.getStudent() != null ? c.getStudent().getFullName() : "",
                     c.getClass_() != null ? c.getClass_().getClassName() : "",
@@ -218,22 +275,22 @@ public class CertificatePanel extends JPanel {
             if (c != null) {
                 Student s = c.getStudent();
                 if (s != null) {
-                    for (int i = 0; i < cboStudent.getItemCount(); i++) {
-                        if (cboStudent.getItemAt(i).id().equals(s.getStudentId())) {
-                            cboStudent.setSelectedIndex(i);
-                            break;
-                        }
-                    }
+                    selectedStudent = s;
+                    txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
+                } else {
+                    selectedStudent = null;
+                    txtStudentName.setText("Chưa chọn học viên...");
                 }
+
                 Class_ clazz = c.getClass_();
                 if (clazz != null) {
-                    for (int i = 0; i < cboClass.getItemCount(); i++) {
-                        if (cboClass.getItemAt(i).id().equals(clazz.getClassId())) {
-                            cboClass.setSelectedIndex(i);
-                            break;
-                        }
-                    }
+                    selectedClass = clazz;
+                    txtClassName.setText(clazz.getClassName());
+                } else {
+                    selectedClass = null;
+                    txtClassName.setText("Chưa chọn lớp học...");
                 }
+
                 txtCertName.setText(c.getCertName() != null ? c.getCertName() : "");
                 DateUtil.setLocalDate(dcIssueDate, c.getIssueDate());
                 txtSerialNo.setText(c.getSerialNo() != null ? c.getSerialNo() : "");
@@ -244,30 +301,41 @@ public class CertificatePanel extends JPanel {
     }
 
     private void addCert() {
+        if (selectedStudent == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn học viên!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String certName = txtCertName.getText().trim();
+        if (certName.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập tên chứng chỉ!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             Certificate c = new Certificate();
-            StudentItem si = (StudentItem) cboStudent.getSelectedItem();
-            if (si != null) {
-                EntityManager em = Jpa.em();
-                c.setStudent(em.find(Student.class, si.id));
-                em.close();
+            c.setStudent(selectedStudent);
+
+            if (selectedClass != null) {
+                c.setClass_(selectedClass);
             }
-            ClassItem ci = (ClassItem) cboClass.getSelectedItem();
-            if (ci != null)
-                c.setClass_(classService.findById(ci.id).orElseThrow());
-            c.setCertName(txtCertName.getText().trim());
+
+            c.setCertName(certName);
+
             LocalDate issueDate = DateUtil.getLocalDate(dcIssueDate);
             if (issueDate == null)
                 throw new IllegalArgumentException("Vui lòng chọn ngày cấp.");
             c.setIssueDate(issueDate);
+
             String serial = txtSerialNo.getText().trim();
             if (!serial.isEmpty())
                 c.setSerialNo(serial);
+
             service.saveCertificate(c);
             JOptionPane.showMessageDialog(this, "Cấp chứng chỉ thành công!", "Thành công",
                     JOptionPane.INFORMATION_MESSAGE);
-            clearForm();
-            refreshData();
+
+            refreshData(); // Đã bao gồm clearForm
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -293,24 +361,16 @@ public class CertificatePanel extends JPanel {
     }
 
     private void clearForm() {
+        selectedStudent = null;
+        txtStudentName.setText("Chưa chọn học viên...");
+
+        selectedClass = null;
+        txtClassName.setText("Chưa chọn lớp học...");
+
         txtCertName.setText("");
         txtSerialNo.setText("");
         DateUtil.setLocalDate(dcIssueDate, LocalDate.now());
         table.clearSelection();
-    }
-
-    private record StudentItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    private record ClassItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
     }
 
     // Tiện ích UI

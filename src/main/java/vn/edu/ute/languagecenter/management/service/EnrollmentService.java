@@ -22,23 +22,51 @@ public class EnrollmentService {
      *   3. Kiểm tra trạng thái lớp có cho phép ghi danh không
      */
     public Enrollment enroll(Student student, Class_ class_) {
-        if (enrollmentRepo.existsByStudentAndClass(student, class_)) {
-            throw new IllegalStateException(
-                "Học viên '" + student.getFullName() + "' đã ghi danh lớp này rồi.");
-        }
-
-        long current = enrollmentRepo.countEnrolledByClass(class_);
-        if (class_.getMaxStudent() > 0 && current >= class_.getMaxStudent()) {
-            throw new IllegalStateException(
-                "Lớp '" + class_.getClassName() + "' đã đủ sĩ số (" + class_.getMaxStudent() + ").");
-        }
-
+        // 1. Kiểm tra trạng thái lớp có cho phép ghi danh không
         if (class_.getStatus() == Class_.ClassStatus.Completed ||
-            class_.getStatus() == Class_.ClassStatus.Cancelled) {
+                class_.getStatus() == Class_.ClassStatus.Cancelled) {
             throw new IllegalStateException(
-                "Lớp '" + class_.getClassName() + "' không còn nhận ghi danh.");
+                    "Lớp '" + class_.getClassName() + "' không còn nhận ghi danh.");
         }
 
+        // 2. Kiểm tra sĩ số lớp có đầy chưa
+        long currentEnrolled = enrollmentRepo.countEnrolledByClass(class_);
+        if (class_.getMaxStudent() > 0 && currentEnrolled >= class_.getMaxStudent()) {
+            throw new IllegalStateException(
+                    "Lớp '" + class_.getClassName() + "' đã đủ sĩ số (" + class_.getMaxStudent() + ").");
+        }
+
+        // 3. Tìm xem học viên đã từng có bản ghi (record) trong lớp này chưa bằng Stream
+        Optional<Enrollment> existingOpt = enrollmentRepo.findByClass(class_).stream()
+                .filter(e -> e.getStudent().getStudentId().equals(student.getStudentId()))
+                .findFirst();
+
+        // NẾU ĐÃ TỪNG CÓ DỮ LIỆU TRONG LỚP NÀY
+        if (existingOpt.isPresent()) {
+            Enrollment existing = existingOpt.get();
+
+            // Nếu đang học -> Báo lỗi
+            if (existing.getStatus() == Enrollment.EnrollmentStatus.Enrolled) {
+                throw new IllegalStateException(
+                        "Học viên '" + student.getFullName() + "' đang theo học lớp này rồi.");
+            }
+
+            // Nếu đã hoàn thành -> Báo lỗi (không cho học lại lớp đã đậu/kết thúc)
+            if (existing.getStatus() == Enrollment.EnrollmentStatus.Completed) {
+                throw new IllegalStateException(
+                        "Học viên '" + student.getFullName() + "' đã hoàn thành lớp này.");
+            }
+
+            // Nếu từng bị rớt/nghỉ (Dropped) -> Reset lại trạng thái để tiếp tục học
+            if (existing.getStatus() == Enrollment.EnrollmentStatus.Dropped) {
+                existing.setStatus(Enrollment.EnrollmentStatus.Enrolled);
+                existing.setEnrollmentDate(LocalDate.now()); // Cập nhật lại ngày ghi danh mới
+                existing.setResult(Enrollment.ResultStatus.NA); // Reset kết quả về NA
+                return enrollmentRepo.save(existing);
+            }
+        }
+
+        // 4. NẾU LÀ HỌC VIÊN HOÀN TOÀN MỚI CHƯA TỪNG HỌC LỚP NÀY
         Enrollment enrollment = new Enrollment();
         enrollment.setStudent(student);
         enrollment.setClass_(class_);

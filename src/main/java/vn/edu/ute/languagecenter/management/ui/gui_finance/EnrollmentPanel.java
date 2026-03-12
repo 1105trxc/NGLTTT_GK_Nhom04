@@ -23,8 +23,12 @@ public class EnrollmentPanel extends JPanel {
     // ClassService chưa có → dùng JpaClassRepository trực tiếp
     private final JpaClassRepository classRepo = new JpaClassRepository();
 
-    private JComboBox<Student> cboStudent;
-    private JComboBox<Class_> cboClass;
+    private Student selectedStudent = null; // Lưu học viên đang được chọn
+    private JTextField txtStudentName;      // Hiển thị tên
+    private JButton btnSelectStudent;       // Nút bấm mở cửa sổ
+    private Class_ selectedClass = null; // Lưu lớp đang chọn
+    private JTextField txtClassName;     // Hiển thị tên lớp
+    private JButton btnSelectClass;      // Nút mở cửa sổ
     private JButton btnEnroll;
     private JButton btnDrop;
     private JButton btnRefresh;
@@ -42,31 +46,6 @@ public class EnrollmentPanel extends JPanel {
         add(buildCenterPanel(), BorderLayout.CENTER);
         add(buildBottomPanel(), BorderLayout.SOUTH);
 
-        // Tự load dữ liệu ngay khi khởi tạo panel
-        refreshComboData();
-    }
-
-    // ── Tự load Student + Class vào ComboBox ─────────────────────────────────
-    private void refreshComboData() {
-        try {
-            List<Student> students = studentService.getActiveStudents();
-            cboStudent.removeAllItems();
-            students.forEach(cboStudent::addItem);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Không load được danh sách học viên: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-        try {
-            List<Class_> classes = classRepo.findAll();
-            cboClass.removeAllItems();
-            classes.forEach(cboClass::addItem);
-            updateSiSoLabel();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Không load được danh sách lớp học: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     private JPanel buildTopPanel() {
@@ -86,20 +65,42 @@ public class EnrollmentPanel extends JPanel {
         g.gridy = 0;
         g.weightx = 0;
         pnl.add(new JLabel("Học viên:"), g);
-        cboStudent = new JComboBox<>();
-        cboStudent.setPreferredSize(new Dimension(240, 28));
+        txtStudentName = new JTextField("Chưa chọn học viên...");
+        txtStudentName.setEditable(false);
+        txtStudentName.setBackground(new Color(245, 245, 245));
+
+        btnSelectStudent = new JButton("🔍");
+        btnSelectStudent.setToolTipText("Mở danh sách tìm kiếm học viên");
+
+        JPanel pnlStudentSelect = new JPanel(new BorderLayout(5, 0));
+        pnlStudentSelect.setOpaque(false);
+        pnlStudentSelect.setPreferredSize(new Dimension(240, 28));
+        pnlStudentSelect.add(txtStudentName, BorderLayout.CENTER);
+        pnlStudentSelect.add(btnSelectStudent, BorderLayout.EAST);
+
         g.gridx = 1;
         g.weightx = 1;
-        pnl.add(cboStudent, g);
+        pnl.add(pnlStudentSelect, g);
 
         g.gridx = 2;
         g.weightx = 0;
         pnl.add(new JLabel("Lớp học:"), g);
-        cboClass = new JComboBox<>();
-        cboClass.setPreferredSize(new Dimension(240, 28));
+        txtClassName = new JTextField("Chưa chọn lớp học...");
+        txtClassName.setEditable(false);
+        txtClassName.setBackground(new Color(245, 245, 245));
+
+        btnSelectClass = new JButton("🔍");
+        btnSelectClass.setToolTipText("Mở danh sách tìm kiếm lớp học");
+
+        JPanel pnlClassSelect = new JPanel(new BorderLayout(5, 0));
+        pnlClassSelect.setOpaque(false);
+        pnlClassSelect.setPreferredSize(new Dimension(240, 28));
+        pnlClassSelect.add(txtClassName, BorderLayout.CENTER);
+        pnlClassSelect.add(btnSelectClass, BorderLayout.EAST);
+
         g.gridx = 3;
         g.weightx = 1;
-        pnl.add(cboClass, g);
+        pnl.add(pnlClassSelect, g);
 
         lblSiSo = new JLabel("Sĩ số: --/--");
         lblSiSo.setForeground(new Color(70, 130, 180));
@@ -122,14 +123,54 @@ public class EnrollmentPanel extends JPanel {
         g.weightx = 1;
         pnl.add(btnPanel, g);
 
-        cboClass.addActionListener(e -> {
-            updateSiSoLabel();
-            loadTable();
+        btnSelectStudent.addActionListener(e -> {
+            try {
+                // Load danh sách mới nhất từ DB
+                List<Student> activeStudents = studentService.getActiveStudents();
+
+                // Mở cửa sổ chọn (Dialog)
+                Window parentWindow = SwingUtilities.getWindowAncestor(this);
+                StudentSelectionDialog dialog = new StudentSelectionDialog(parentWindow, activeStudents);
+                dialog.setVisible(true); // Code sẽ dừng ở đây chờ người dùng đóng cửa sổ
+
+                // Lấy kết quả trả về
+                Student s = dialog.getSelectedStudent();
+                if (s != null) {
+                    selectedStudent = s;
+                    // Hiển thị Tên - SĐT cho rõ ràng
+                    txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi tải học viên: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         });
+
+        btnSelectClass.addActionListener(e -> {
+            try {
+                // Lấy toàn bộ lớp từ DB (bạn có thể viết thêm hàm getActiveClasses bên ClassService để chỉ lấy lớp đang mở)
+                List<Class_> allClasses = classRepo.findAll();
+
+                Window parentWindow = SwingUtilities.getWindowAncestor(this);
+                ClassSelectionDialog dialog = new ClassSelectionDialog(parentWindow, allClasses);
+                dialog.setVisible(true);
+
+                Class_ c = dialog.getSelectedClass();
+                if (c != null) {
+                    selectedClass = c;
+                    txtClassName.setText(c.getClassName());
+
+                    // Khi chọn lớp xong thì cập nhật sĩ số và load danh sách học viên của lớp đó
+                    updateSiSoLabel();
+                    loadTable();
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi tải lớp học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         btnEnroll.addActionListener(e -> handleEnroll());
         btnDrop.addActionListener(e -> handleDrop());
         btnRefresh.addActionListener(e -> {
-            refreshComboData();
             loadTable();
         });
         return pnl;
@@ -154,7 +195,7 @@ public class EnrollmentPanel extends JPanel {
         searchBar.add(btnSearch);
         pnl.add(searchBar, BorderLayout.NORTH);
 
-        String[] cols = { "ID", "Học Viên", "Lớp Học", "Ngày Ghi Danh", "Trạng Thái", "Kết Quả" };
+        String[] cols = {"ID", "Học Viên", "Lớp Học", "Ngày Ghi Danh", "Trạng Thái", "Kết Quả"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -183,8 +224,32 @@ public class EnrollmentPanel extends JPanel {
         tblEnrollment.getColumnModel().getColumn(0).setMaxWidth(0);
         pnl.add(new JScrollPane(tblEnrollment), BorderLayout.CENTER);
 
+        // Vẫn giữ lại sự kiện click nút Tìm kiếm (phòng hờ người dùng vẫn có thói quen click)
         btnSearch.addActionListener(e -> filterTable(txtSearch.getText().trim()));
-        txtSearch.addActionListener(e -> filterTable(txtSearch.getText().trim()));
+
+        // --- THÊM MỚI: Bắt sự kiện gõ phím (Live Search) ---
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                doSearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                doSearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                doSearch();
+            }
+
+            private void doSearch() {
+                // Dùng SwingUtilities.invokeLater để đảm bảo UI không bị giật/lag khi gõ nhanh
+                SwingUtilities.invokeLater(() -> filterTable(txtSearch.getText().trim()));
+            }
+        });
+
         return pnl;
     }
 
@@ -198,20 +263,25 @@ public class EnrollmentPanel extends JPanel {
     }
 
     private void handleEnroll() {
-        Student student = (Student) cboStudent.getSelectedItem();
-        Class_ class_ = (Class_) cboClass.getSelectedItem();
-        if (student == null || class_ == null) {
+
+        // Dùng biến selectedStudent thay vì cboStudent
+        if (selectedStudent == null || selectedClass == null) {
             JOptionPane.showMessageDialog(this,
                     "Vui lòng chọn Học viên và Lớp học.", "Thiếu thông tin",
                     JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
-            enrollmentService.enroll(student, class_);
+            enrollmentService.enroll(selectedStudent, selectedClass); // Truyền selectedStudent vào
             JOptionPane.showMessageDialog(this,
-                    "Ghi danh thành công!\nHọc viên: " + student.getFullName()
-                            + "\nLớp: " + class_.getClassName(),
+                    "Ghi danh thành công!\nHọc viên: " + selectedStudent.getFullName()
+                            + "\nLớp: " + selectedClass.getClassName(),
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+            // Xóa rỗng form sau khi ghi danh xong cho tiện
+            selectedStudent = null;
+            txtStudentName.setText("Chưa chọn học viên...");
+
             updateSiSoLabel();
             loadTable();
         } catch (IllegalStateException ex) {
@@ -246,14 +316,13 @@ public class EnrollmentPanel extends JPanel {
 
     private void loadTable() {
         tableModel.setRowCount(0);
-        Class_ selected = (Class_) cboClass.getSelectedItem();
-        if (selected == null) {
+        if (selectedClass == null) {
             updateTotalLabel(0);
             return;
         }
         try {
-            List<Enrollment> list = enrollmentService.findByClass(selected);
-            list.forEach(e -> tableModel.addRow(new Object[] {
+            List<Enrollment> list = enrollmentService.findByClass(selectedClass);
+            list.forEach(e -> tableModel.addRow(new Object[]{
                     e.getEnrollmentId(),
                     e.getStudent().getFullName(),
                     e.getClass_().getClassName(),
@@ -276,14 +345,13 @@ public class EnrollmentPanel extends JPanel {
         }
         String kw = keyword.toLowerCase();
         tableModel.setRowCount(0);
-        Class_ selected = (Class_) cboClass.getSelectedItem();
-        if (selected == null)
+        if (selectedClass == null)
             return;
         try {
-            enrollmentService.findByClass(selected).stream()
+            enrollmentService.findByClass(selectedClass).stream()
                     .filter(e -> e.getStudent().getFullName().toLowerCase().contains(kw)
                             || e.getClass_().getClassName().toLowerCase().contains(kw))
-                    .forEach(e -> tableModel.addRow(new Object[] {
+                    .forEach(e -> tableModel.addRow(new Object[]{
                             e.getEnrollmentId(),
                             e.getStudent().getFullName(),
                             e.getClass_().getClassName(),
@@ -299,17 +367,16 @@ public class EnrollmentPanel extends JPanel {
     }
 
     private void updateSiSoLabel() {
-        Class_ c = (Class_) cboClass.getSelectedItem();
-        if (c == null) {
+        if (selectedClass == null) {
             lblSiSo.setText("Sĩ số: --/--");
             return;
         }
         try {
-            long current = enrollmentService.findByClass(c).stream()
+            long current = enrollmentService.findByClass(selectedClass).stream()
                     .filter(e -> e.getStatus() == Enrollment.EnrollmentStatus.Enrolled)
                     .count();
-            lblSiSo.setText("Sĩ số: " + current + " / " + c.getMaxStudent());
-            lblSiSo.setForeground(current >= c.getMaxStudent()
+            lblSiSo.setText("Sĩ số: " + current + " / " + selectedClass.getMaxStudent());
+            lblSiSo.setForeground(current >= selectedClass.getMaxStudent()
                     ? new Color(178, 34, 34)
                     : new Color(46, 139, 87));
         } catch (Exception ignored) {
@@ -324,19 +391,6 @@ public class EnrollmentPanel extends JPanel {
                     ((JLabel) c).setText("Tổng bản ghi: " + total);
             }
         }
-    }
-
-    /** Vẫn giữ các setter để MainFrame/tab cha có thể override nếu cần */
-    public void setStudents(List<Student> students) {
-        cboStudent.removeAllItems();
-        students.forEach(cboStudent::addItem);
-    }
-
-    public void setClasses(List<Class_> classes) {
-        cboClass.removeAllItems();
-        classes.forEach(cboClass::addItem);
-        updateSiSoLabel();
-        loadTable();
     }
 
     private static JButton makeButton(String text, Color bg) {

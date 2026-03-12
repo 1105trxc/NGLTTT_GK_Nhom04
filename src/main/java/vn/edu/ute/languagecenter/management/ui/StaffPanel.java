@@ -48,7 +48,7 @@ public class StaffPanel extends JPanel {
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(0, 0, 16, 0));
 
-        JLabel lbl = new JLabel("🧑\u200D💼  Quản Lý Nhân Viên");
+        JLabel lbl = new JLabel("🧑‍💼  Quản Lý Nhân Viên");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lbl.setForeground(new Color(25, 55, 95));
         panel.add(lbl, BorderLayout.WEST);
@@ -57,6 +57,7 @@ public class StaffPanel extends JPanel {
         sp.setOpaque(false);
         txtSearch = new JTextField(18);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearch.setToolTipText("Tìm theo tên, chức vụ, SĐT hoặc Email");
         txtSearch.setBackground(Color.WHITE);
         txtSearch.setForeground(new Color(30, 30, 30));
         txtSearch.setCaretColor(COLOR_PRIMARY);
@@ -69,10 +70,38 @@ public class StaffPanel extends JPanel {
         styleBtn(btnSearch, COLOR_PRIMARY);
         styleBtn(btnRefresh, new Color(80, 120, 80));
 
-        // Lambda: lọc dữ liệu khi click hoặc Enter
+        // Vẫn giữ sự kiện click/Enter cho người dùng có thói quen cũ
         btnSearch.addActionListener(e -> searchData());
         txtSearch.addActionListener(e -> searchData());
-        btnRefresh.addActionListener(e -> loadData());
+
+        // --- BẮT ĐẦU: LIVE SEARCH ---
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            private void doLiveSearch() {
+                // Dùng invokeLater để UI không bị giật khi gõ phím nhanh
+                SwingUtilities.invokeLater(() -> searchData());
+            }
+        });
+        // --- KẾT THÚC: LIVE SEARCH ---
+
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText(""); // Xóa trắng ô tìm kiếm
+            loadData();
+        });
 
         sp.add(new JLabel("Tìm: "));
         sp.add(txtSearch);
@@ -83,7 +112,7 @@ public class StaffPanel extends JPanel {
     }
 
     private JScrollPane buildCenter() {
-        String[] cols = { "ID", "Họ Tên", "Chức Vụ", "Điện Thoại", "Email", "Trạng Thái" };
+        String[] cols = {"ID", "Họ Tên", "Chức Vụ", "Điện Thoại", "Email", "Trạng Thái"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -194,7 +223,7 @@ public class StaffPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         for (Staff s : staffService.getAllStaff()) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     s.getStaffId(), s.getFullName(), s.getRole(),
                     s.getPhone(), s.getEmail(), s.getStatus()
             });
@@ -204,7 +233,7 @@ public class StaffPanel extends JPanel {
 
     /**
      * Tìm kiếm nhân viên bằng Java Stream Lambda.
-     * filter() theo tên hoặc tên chức vụ - không thay đổi list gốc (Immutability)
+     * Hỗ trợ tìm theo: Tên, Chức vụ, SĐT, Email.
      */
     private void searchData() {
         String kw = txtSearch.getText().trim().toLowerCase();
@@ -218,8 +247,10 @@ public class StaffPanel extends JPanel {
         // Stream: filter() -> forEach() - không mutate list gốc
         list.stream()
                 .filter(s -> (s.getFullName() != null && s.getFullName().toLowerCase().contains(kw))
-                        || (s.getRole() != null && s.getRole().name().toLowerCase().contains(kw)))
-                .forEach(s -> tableModel.addRow(new Object[] {
+                        || (s.getRole() != null && s.getRole().name().toLowerCase().contains(kw))
+                        || (s.getPhone() != null && s.getPhone().contains(kw))
+                        || (s.getEmail() != null && s.getEmail().toLowerCase().contains(kw)))
+                .forEach(s -> tableModel.addRow(new Object[]{
                         s.getStaffId(), s.getFullName(), s.getRole(),
                         s.getPhone(), s.getEmail(), s.getStatus()
                 }));
@@ -250,6 +281,8 @@ public class StaffPanel extends JPanel {
             s.setStatus((Staff.ActiveStatus) cmbStatus.getSelectedItem());
             staffService.addStaff(s);
             JOptionPane.showMessageDialog(this, "✅ Thêm nhân viên thành công!");
+
+            txtSearch.setText(""); // Xóa ô tìm kiếm
             loadData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -271,7 +304,8 @@ public class StaffPanel extends JPanel {
             s.setStatus((Staff.ActiveStatus) cmbStatus.getSelectedItem());
             staffService.updateStaff(s);
             JOptionPane.showMessageDialog(this, "✅ Cập nhật nhân viên thành công!");
-            loadData();
+
+            searchData(); // Giữ nguyên kết quả tìm kiếm hiện tại sau khi cập nhật
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -287,7 +321,9 @@ public class StaffPanel extends JPanel {
             try {
                 staffService.deleteStaff(selectedStaffId);
                 JOptionPane.showMessageDialog(this, "✅ Xóa nhân viên thành công!");
-                loadData();
+
+                searchData(); // Giữ nguyên kết quả tìm kiếm hiện tại sau khi xóa
+                clearForm();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "❌ Lỗi khi xóa: " + ex.getMessage(), "Lỗi",
                         JOptionPane.ERROR_MESSAGE);

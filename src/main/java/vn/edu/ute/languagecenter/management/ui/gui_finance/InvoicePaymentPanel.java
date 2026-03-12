@@ -33,8 +33,14 @@ public class InvoicePaymentPanel extends JPanel {
     private final PromotionRepository promotionRepo = new JpaPromotionRepository();
 
     // ── NORTH ─────────────────────────────────────────────────────────────────
-    private JComboBox<Student> cboStudent;
-    private JComboBox<Class_> cboClass;
+    private Student selectedStudent = null;
+    private JTextField txtStudentName;
+    private JButton btnSelectStudent;
+
+    private Class_ selectedClass = null;
+    private JTextField txtClassName;
+    private JButton btnSelectClass;
+
     private JComboBox<Promotion> cboPromotion;
     private JLabel lblOriginalFee;
     private JLabel lblDiscount;
@@ -68,28 +74,10 @@ public class InvoicePaymentPanel extends JPanel {
         loadInvoiceTable();
     }
 
-    // ── Tự load Student, Class, Promotion ────────────────────────────────────
+    // ── Tự load Promotion (Học viên & Lớp sẽ load qua Dialog) ─────────────────
     private void refreshComboData() {
-        try {
-            List<Student> students = studentService.getActiveStudents();
-            cboStudent.removeAllItems();
-            students.forEach(cboStudent::addItem);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Không load được danh sách học viên: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-        try {
-            List<Class_> classes = classRepo.findAll();
-            cboClass.removeAllItems();
-            classes.forEach(cboClass::addItem);
-            recalcPreview();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Không load được danh sách lớp: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
         loadPromotions();
+        recalcPreview();
     }
 
     private JPanel buildCreatePanel() {
@@ -105,16 +93,39 @@ public class InvoicePaymentPanel extends JPanel {
         g.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
+        // 1. CHỌN HỌC VIÊN
         addLabel(pnl, "Học viên:", g, 0, row);
-        cboStudent = new JComboBox<>();
-        cboStudent.setPreferredSize(new Dimension(200, 28));
-        addComp(pnl, cboStudent, g, 1, row++);
+        txtStudentName = new JTextField("Chưa chọn học viên...");
+        txtStudentName.setEditable(false);
+        txtStudentName.setBackground(new Color(245, 245, 245));
 
+        btnSelectStudent = new JButton("🔍");
+        btnSelectStudent.setToolTipText("Mở danh sách tìm kiếm học viên");
+
+        JPanel pnlStudentSelect = new JPanel(new BorderLayout(5, 0));
+        pnlStudentSelect.setOpaque(false);
+        pnlStudentSelect.setPreferredSize(new Dimension(200, 28));
+        pnlStudentSelect.add(txtStudentName, BorderLayout.CENTER);
+        pnlStudentSelect.add(btnSelectStudent, BorderLayout.EAST);
+        addComp(pnl, pnlStudentSelect, g, 1, row++);
+
+        // 2. CHỌN LỚP HỌC
         addLabel(pnl, "Lớp học:", g, 0, row);
-        cboClass = new JComboBox<>();
-        cboClass.setPreferredSize(new Dimension(200, 28));
-        addComp(pnl, cboClass, g, 1, row++);
+        txtClassName = new JTextField("Chưa chọn lớp học...");
+        txtClassName.setEditable(false);
+        txtClassName.setBackground(new Color(245, 245, 245));
 
+        btnSelectClass = new JButton("🔍");
+        btnSelectClass.setToolTipText("Mở danh sách tìm kiếm lớp học");
+
+        JPanel pnlClassSelect = new JPanel(new BorderLayout(5, 0));
+        pnlClassSelect.setOpaque(false);
+        pnlClassSelect.setPreferredSize(new Dimension(200, 28));
+        pnlClassSelect.add(txtClassName, BorderLayout.CENTER);
+        pnlClassSelect.add(btnSelectClass, BorderLayout.EAST);
+        addComp(pnl, pnlClassSelect, g, 1, row++);
+
+        // 3. KHUYẾN MÃI & TÍNH TIỀN
         addLabel(pnl, "Khuyến mãi:", g, 0, row);
         cboPromotion = new JComboBox<>();
         cboPromotion.setPreferredSize(new Dimension(200, 28));
@@ -146,10 +157,54 @@ public class InvoicePaymentPanel extends JPanel {
         g.gridwidth = 4;
         pnl.add(btnRow, g);
 
-        cboClass.addActionListener(e -> recalcPreview());
+        // --- SỰ KIỆN NÚT TÌM KIẾM ---
+        btnSelectStudent.addActionListener(e -> {
+            try {
+                List<Student> activeStudents = studentService.getActiveStudents();
+                Window parentWindow = SwingUtilities.getWindowAncestor(this);
+                StudentSelectionDialog dialog = new StudentSelectionDialog(parentWindow, activeStudents);
+                dialog.setVisible(true);
+
+                Student s = dialog.getSelectedStudent();
+                if (s != null) {
+                    selectedStudent = s;
+                    txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi tải học viên: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnSelectClass.addActionListener(e -> {
+            try {
+                List<Class_> allClasses = classRepo.findAll();
+                Window parentWindow = SwingUtilities.getWindowAncestor(this);
+                ClassSelectionDialog dialog = new ClassSelectionDialog(parentWindow, allClasses);
+                dialog.setVisible(true);
+
+                Class_ c = dialog.getSelectedClass();
+                if (c != null) {
+                    selectedClass = c;
+                    txtClassName.setText(c.getClassName());
+                    recalcPreview(); // Chọn lớp xong tự tính lại tiền
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi tải lớp học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         cboPromotion.addActionListener(e -> recalcPreview());
         btnCreateInvoice.addActionListener(e -> handleCreateInvoice());
-        btnRefresh.addActionListener(e -> refreshComboData());
+        btnRefresh.addActionListener(e -> {
+            refreshComboData();
+            // Xóa rỗng khi làm mới
+            selectedStudent = null;
+            txtStudentName.setText("Chưa chọn học viên...");
+            selectedClass = null;
+            txtClassName.setText("Chưa chọn lớp học...");
+            recalcPreview();
+        });
+
         return pnl;
     }
 
@@ -160,14 +215,14 @@ public class InvoicePaymentPanel extends JPanel {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         bar.setOpaque(false);
         JComboBox<String> cboFilter = new JComboBox<>(
-                new String[] { "Tất cả", "Issued", "Paid", "Draft", "Cancelled" });
+                new String[]{"Tất cả", "Issued", "Paid", "Draft", "Cancelled"});
         JButton btnFilter = makeButton("Lọc", new Color(70, 130, 180));
         bar.add(new JLabel("Lọc trạng thái:"));
         bar.add(cboFilter);
         bar.add(btnFilter);
         pnl.add(bar, BorderLayout.NORTH);
 
-        String[] cols = { "ID", "Học Viên", "Tổng Tiền (VND)", "Ngày Lập", "Trạng Thái", "Ghi Chú" };
+        String[] cols = {"ID", "Học Viên", "Tổng Tiền (VND)", "Ngày Lập", "Trạng Thái", "Ghi Chú"};
         invoiceModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -233,7 +288,7 @@ public class InvoicePaymentPanel extends JPanel {
 
         addLabel(pnl, "Phương thức:", g, 0, row);
         cboMethod = new JComboBox<>(
-                new String[] { "Cash", "Bank", "Momo", "ZaloPay", "Card", "Other" });
+                new String[]{"Cash", "Bank", "Momo", "ZaloPay", "Card", "Other"});
         styleCombo(cboMethod);
         addComp(pnl, cboMethod, g, 1, row++);
 
@@ -259,8 +314,10 @@ public class InvoicePaymentPanel extends JPanel {
 
     // ── Business logic ────────────────────────────────────────────────────────
     private void recalcPreview() {
-        Class_ c = (Class_) cboClass.getSelectedItem();
+        // Dùng selectedClass thay vì cboClass
+        Class_ c = selectedClass;
         Promotion p = (Promotion) cboPromotion.getSelectedItem();
+
         if (c == null || c.getCourse() == null) {
             lblOriginalFee.setText("0 VND");
             lblDiscount.setText("0 VND");
@@ -275,8 +332,8 @@ public class InvoicePaymentPanel extends JPanel {
     }
 
     private void handleCreateInvoice() {
-        Student s = (Student) cboStudent.getSelectedItem();
-        Class_ c = (Class_) cboClass.getSelectedItem();
+        Student s = selectedStudent;
+        Class_ c = selectedClass;
         if (s == null || c == null) {
             JOptionPane.showMessageDialog(this,
                     "Vui lòng chọn Học viên và Lớp học.", "Thiếu thông tin",
@@ -289,7 +346,16 @@ public class InvoicePaymentPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "Tạo hóa đơn thành công!\nTổng tiền: " + formatVND(inv.getTotalAmount()),
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
+
+            // Tải lại bảng và xóa form sau khi tạo thành công
             loadInvoiceTable();
+            selectedStudent = null;
+            txtStudentName.setText("Chưa chọn học viên...");
+            selectedClass = null;
+            txtClassName.setText("Chưa chọn lớp học...");
+            if (cboPromotion.getItemCount() > 0) cboPromotion.setSelectedIndex(0);
+            recalcPreview();
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -362,7 +428,7 @@ public class InvoicePaymentPanel extends JPanel {
             invoiceService.findAll().stream()
                     .filter(i -> "Tất cả".equals(statusFilter)
                             || i.getStatus().name().equals(statusFilter))
-                    .forEach(i -> invoiceModel.addRow(new Object[] {
+                    .forEach(i -> invoiceModel.addRow(new Object[]{
                             i.getInvoiceId(), i.getStudent().getFullName(),
                             formatVND(i.getTotalAmount()), i.getIssueDate(),
                             i.getStatus(), i.getNote()
@@ -390,28 +456,19 @@ public class InvoicePaymentPanel extends JPanel {
             BigDecimal rem = inv.getTotalAmount().subtract(paid).max(BigDecimal.ZERO);
             lblPaidSoFar.setText(formatVND(paid));
             lblRemaining.setText(formatVND(rem));
+
+            // Điền tự động số tiền còn thiếu vào ô nhập để kế toán thao tác nhanh
+            txtAmount.setText(rem.toPlainString());
         });
     }
 
     private void loadPromotions() {
         cboPromotion.removeAllItems();
-        cboPromotion.addItem(null);
+        cboPromotion.addItem(null); // Có thể không áp dụng khuyến mãi
         try {
             promotionRepo.findAllActive().forEach(cboPromotion::addItem);
         } catch (Exception ignored) {
         }
-    }
-
-    /** Setters để cha override nếu cần */
-    public void setStudents(List<Student> students) {
-        cboStudent.removeAllItems();
-        students.forEach(cboStudent::addItem);
-    }
-
-    public void setClasses(List<Class_> classes) {
-        cboClass.removeAllItems();
-        classes.forEach(cboClass::addItem);
-        recalcPreview();
     }
 
     private String formatVND(BigDecimal val) {

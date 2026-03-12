@@ -29,7 +29,11 @@ public class ResultPanel extends JPanel {
     private final EnrollmentService enrollmentService = new EnrollmentService();
     private final ClassService classService = new ClassService();
 
-    private JComboBox<Class_> cboClass;
+    // Thay đổi: Dùng Dialog chọn lớp thay cho ComboBox
+    private Class_ selectedClass = null;
+    private JTextField txtClassName;
+    private JButton btnSelectClass;
+
     private JButton btnLoad;
     private JButton btnSaveAll;
     private JButton btnExportStats;
@@ -53,32 +57,6 @@ public class ResultPanel extends JPanel {
         add(buildTopPanel(), BorderLayout.NORTH);
         add(buildTablePanel(), BorderLayout.CENTER);
         add(buildStatsPanel(), BorderLayout.EAST);
-
-        // Tự load danh sách lớp ngay khi khởi tạo
-        refreshClassCombo();
-    }
-
-    // ── Tự load Class vào ComboBox ────────────────────────────────────────────
-    private void refreshClassCombo() {
-        try {
-            List<Class_> classes;
-
-            // Nếu có ID giáo viên, lọc lớp theo giáo viên đó
-            if (currentTeacherId != null) {
-                classes = classService.findByTeacherId(currentTeacherId);
-            }
-            // Ngược lại (ví dụ Admin/Staff đăng nhập), load tất cả lớp
-            else {
-                classes = classService.findAll();
-            }
-
-            cboClass.removeAllItems();
-            classes.forEach(cboClass::addItem);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Không load được danh sách lớp: " + ex.getMessage(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     private JPanel buildTopPanel() {
@@ -97,11 +75,24 @@ public class ResultPanel extends JPanel {
         g.gridy = 0;
         g.weightx = 0;
         pnl.add(new JLabel("Lớp học:"), g);
-        cboClass = new JComboBox<>();
-        cboClass.setPreferredSize(new Dimension(250, 28));
+
+        // --- Ô hiển thị tên lớp và Nút chọn lớp ---
+        txtClassName = new JTextField("Chưa chọn lớp học...");
+        txtClassName.setEditable(false);
+        txtClassName.setBackground(new Color(245, 245, 245));
+
+        btnSelectClass = new JButton("🔍");
+        btnSelectClass.setToolTipText("Mở danh sách tìm kiếm lớp học");
+
+        JPanel pnlClassSelect = new JPanel(new BorderLayout(5, 0));
+        pnlClassSelect.setOpaque(false);
+        pnlClassSelect.setPreferredSize(new Dimension(250, 28));
+        pnlClassSelect.add(txtClassName, BorderLayout.CENTER);
+        pnlClassSelect.add(btnSelectClass, BorderLayout.EAST);
+
         g.gridx = 1;
         g.weightx = 1;
-        pnl.add(cboClass, g);
+        pnl.add(pnlClassSelect, g);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
@@ -119,10 +110,46 @@ public class ResultPanel extends JPanel {
         g.weightx = 1;
         pnl.add(btnPanel, g);
 
+        // --- SỰ KIỆN NÚT CHỌN LỚP ---
+        btnSelectClass.addActionListener(e -> {
+            try {
+                List<Class_> classes;
+                // Nếu có ID giáo viên, lọc lớp theo giáo viên đó, nếu không thì lấy tất cả
+                if (currentTeacherId != null) {
+                    classes = classService.findByTeacherId(currentTeacherId);
+                } else {
+                    classes = classService.findAll();
+                }
+
+                Window parentWindow = SwingUtilities.getWindowAncestor(this);
+                ClassSelectionDialog dialog = new ClassSelectionDialog(parentWindow, classes);
+                dialog.setVisible(true);
+
+                Class_ c = dialog.getSelectedClass();
+                if (c != null) {
+                    selectedClass = c;
+                    txtClassName.setText(c.getClassName());
+
+                    // Tự động load danh sách học viên và reset thống kê khi chọn lớp mới
+                    loadResultTable();
+                    txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi tải lớp học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
         btnLoad.addActionListener(e -> loadResultTable());
         btnSaveAll.addActionListener(e -> saveAllResults());
         btnExportStats.addActionListener(e -> refreshStats());
-        btnRefresh.addActionListener(e -> refreshClassCombo());
+        btnRefresh.addActionListener(e -> {
+            // Xóa rỗng form
+            selectedClass = null;
+            txtClassName.setText("Chưa chọn lớp học...");
+            tableModel.setRowCount(0);
+            txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
+        });
+
         return pnl;
     }
 
@@ -130,7 +157,7 @@ public class ResultPanel extends JPanel {
         JPanel pnl = new JPanel(new BorderLayout());
         pnl.setOpaque(false);
 
-        String[] cols = { "student_id", "Họ Tên Học Viên", "Điểm Số (0-100)", "Xếp Loại", "Nhận Xét" };
+        String[] cols = {"student_id", "Họ Tên Học Viên", "Điểm Số (0-100)", "Xếp Loại", "Nhận Xét"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -165,7 +192,7 @@ public class ResultPanel extends JPanel {
                 .setCellRenderer(new DefaultTableCellRenderer() {
                     @Override
                     public Component getTableCellRendererComponent(JTable t, Object v,
-                            boolean sel, boolean foc, int r, int c) {
+                                                                   boolean sel, boolean foc, int r, int c) {
                         super.getTableCellRendererComponent(t, v, sel, foc, r, c);
                         if (v != null) {
                             String gr = v.toString();
@@ -240,7 +267,7 @@ public class ResultPanel extends JPanel {
 
     // ── Business logic ────────────────────────────────────────────────────────
     private void loadResultTable() {
-        Class_ cls = (Class_) cboClass.getSelectedItem();
+        Class_ cls = selectedClass;
         if (cls == null) {
             JOptionPane.showMessageDialog(this, "Chọn lớp học trước.",
                     "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
@@ -261,7 +288,7 @@ public class ResultPanel extends JPanel {
 
             students.forEach(s -> {
                 Result r = existingResults.get(s.getStudentId());
-                tableModel.addRow(new Object[] {
+                tableModel.addRow(new Object[]{
                         s.getStudentId(), s.getFullName(),
                         r != null ? r.getScore() : "",
                         r != null ? r.getGrade() : "",
@@ -275,7 +302,7 @@ public class ResultPanel extends JPanel {
     }
 
     private void saveAllResults() {
-        Class_ cls = (Class_) cboClass.getSelectedItem();
+        Class_ cls = selectedClass;
         if (cls == null || tableModel.getRowCount() == 0) {
             JOptionPane.showMessageDialog(this, "Không có dữ liệu để lưu.",
                     "Thông báo", JOptionPane.INFORMATION_MESSAGE);
@@ -287,22 +314,30 @@ public class ResultPanel extends JPanel {
         Map<Student, BigDecimal> scores = new LinkedHashMap<>();
         Map<Student, String> comments = new LinkedHashMap<>();
 
+        // Lấy danh sách Student THẬT từ database để map vào điểm số (Tránh lỗi Hibernate transient/detached)
+        Map<Long, Student> realStudentsMap = enrollmentService.findByClass(cls).stream()
+                .map(Enrollment::getStudent)
+                .collect(Collectors.toMap(Student::getStudentId, s -> s));
+
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             Object scoreVal = tableModel.getValueAt(i, COL_SCORE);
             if (scoreVal == null || scoreVal.toString().isBlank())
                 continue;
-            try {
-                BigDecimal score = new BigDecimal(scoreVal.toString());
-                Student stub = new Student();
-                stub.setStudentId((Long) tableModel.getValueAt(i, COL_ID));
-                stub.setFullName((String) tableModel.getValueAt(i, COL_NAME));
-                scores.put(stub, score);
-                comments.put(stub, Objects.toString(tableModel.getValueAt(i, COL_COMMENT), ""));
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Điểm không hợp lệ tại dòng " + (i + 1) + ": " + scoreVal,
-                        "Dữ liệu sai", JOptionPane.WARNING_MESSAGE);
-                return;
+
+            Long studentId = (Long) tableModel.getValueAt(i, COL_ID);
+            Student realStudent = realStudentsMap.get(studentId);
+
+            if (realStudent != null) {
+                try {
+                    BigDecimal score = new BigDecimal(scoreVal.toString());
+                    scores.put(realStudent, score);
+                    comments.put(realStudent, Objects.toString(tableModel.getValueAt(i, COL_COMMENT), ""));
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this,
+                            "Điểm không hợp lệ tại dòng " + (i + 1) + ": " + scoreVal,
+                            "Dữ liệu sai", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
             }
         }
 
@@ -320,7 +355,7 @@ public class ResultPanel extends JPanel {
     }
 
     private void refreshStats() {
-        Class_ cls = (Class_) cboClass.getSelectedItem();
+        Class_ cls = selectedClass;
         if (cls == null)
             return;
         try {
@@ -345,14 +380,6 @@ public class ResultPanel extends JPanel {
         }
     }
 
-    /**
-     * Setter để cha override nếu cần
-     */
-    public void setClasses(List<Class_> classes) {
-        cboClass.removeAllItems();
-        classes.forEach(cboClass::addItem);
-    }
-
     private static JButton makeButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setBackground(bg);
@@ -371,7 +398,7 @@ public class ResultPanel extends JPanel {
             JFrame f = new JFrame("Preview – ResultPanel");
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             f.setSize(900, 600);
-            f.add(new ResultPanel(2L));
+            f.add(new ResultPanel(2L)); // Truyền ID giáo viên để test
             f.setLocationRelativeTo(null);
             f.setVisible(true);
         });

@@ -6,8 +6,11 @@ import vn.edu.ute.languagecenter.management.model.Schedule;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.RoomService;
 import vn.edu.ute.languagecenter.management.service.ScheduleService;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.ClassSelectionDialog;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.RoomSelectionDialog;
 
 import com.toedter.calendar.JDateChooser;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -18,16 +21,28 @@ import java.util.List;
 
 public class SchedulePanel extends JPanel {
 
+    // ── Services ──────────────────────────────────────────────────────────────
     private final ScheduleService scheduleService = new ScheduleService();
     private final ClassService classService = new ClassService();
     private final RoomService roomService = new RoomService();
 
+    // ── Components ────────────────────────────────────────────────────────────
     private JTable table;
     private DefaultTableModel tableModel;
-    private JComboBox<ClassItem> cboClass;
-    private JComboBox<RoomItem> cboRoom;
+
+    // Nút chọn Lớp học
+    private Class_ selectedClass = null;
+    private JTextField txtClassName;
+    private JButton btnSelectClass;
+
+    // Nút chọn Phòng học
+    private Room selectedRoom = null;
+    private JTextField txtRoomName;
+    private JButton btnSelectRoom;
+
     private JDateChooser dcDate;
-    private JTextField txtStartTime, txtEndTime;
+    private JSpinner spnStartTime, spnEndTime; // Đã thay bằng Spinner
+
     private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnLoadByClass;
     private Long teacherId;
 
@@ -53,19 +68,40 @@ public class SchedulePanel extends JPanel {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // 1. CHỌN LỚP HỌC
         gbc.gridx = 0;
         gbc.gridy = 0;
         formPanel.add(new JLabel("Lớp học:"), gbc);
-        gbc.gridx = 1;
-        cboClass = new JComboBox<>();
-        formPanel.add(cboClass, gbc);
 
+        txtClassName = createTextField(15);
+        txtClassName.setEditable(false);
+        txtClassName.setText("Chưa chọn lớp...");
+        btnSelectClass = new JButton("🔍");
+        JPanel pnlClassSelect = new JPanel(new BorderLayout(5, 0));
+        pnlClassSelect.setOpaque(false);
+        pnlClassSelect.add(txtClassName, BorderLayout.CENTER);
+        pnlClassSelect.add(btnSelectClass, BorderLayout.EAST);
+
+        gbc.gridx = 1;
+        formPanel.add(pnlClassSelect, gbc);
+
+        // 2. CHỌN PHÒNG HỌC
         gbc.gridx = 2;
         formPanel.add(new JLabel("Phòng:"), gbc);
-        gbc.gridx = 3;
-        cboRoom = new JComboBox<>();
-        formPanel.add(cboRoom, gbc);
 
+        txtRoomName = createTextField(15);
+        txtRoomName.setEditable(false);
+        txtRoomName.setText("Chưa chọn phòng...");
+        btnSelectRoom = new JButton("🔍");
+        JPanel pnlRoomSelect = new JPanel(new BorderLayout(5, 0));
+        pnlRoomSelect.setOpaque(false);
+        pnlRoomSelect.add(txtRoomName, BorderLayout.CENTER);
+        pnlRoomSelect.add(btnSelectRoom, BorderLayout.EAST);
+
+        gbc.gridx = 3;
+        formPanel.add(pnlRoomSelect, gbc);
+
+        // 3. THÔNG TIN NGÀY VÀ GIỜ (DÙNG SPINNER)
         gbc.gridx = 0;
         gbc.gridy = 1;
         formPanel.add(new JLabel("Ngày học:"), gbc);
@@ -76,19 +112,19 @@ public class SchedulePanel extends JPanel {
         gbc.gridx = 2;
         formPanel.add(new JLabel("Giờ BĐ (HH:mm):"), gbc);
         gbc.gridx = 3;
-        txtStartTime = createTextField(6);
-        txtStartTime.setToolTipText("VD: 08:00");
-        formPanel.add(txtStartTime, gbc);
+        spnStartTime = createTimeSpinner();
+        setSpinnerTime(spnStartTime, LocalTime.of(8, 0)); // Mặc định 08:00
+        formPanel.add(spnStartTime, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
         formPanel.add(new JLabel("Giờ KT (HH:mm):"), gbc);
         gbc.gridx = 1;
-        txtEndTime = createTextField(6);
-        txtEndTime.setToolTipText("VD: 10:00");
-        formPanel.add(txtEndTime, gbc);
+        spnEndTime = createTimeSpinner();
+        setSpinnerTime(spnEndTime, LocalTime.of(10, 0)); // Mặc định 10:00
+        formPanel.add(spnEndTime, gbc);
 
-        // Buttons
+        // --- BUTTONS ---
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
         btnAdd = makeButton("✅ Thêm", new Color(46, 139, 87));
@@ -111,7 +147,8 @@ public class SchedulePanel extends JPanel {
 
         add(formPanel, BorderLayout.NORTH);
 
-        String[] cols = { "ID", "Lớp", "Ngày học", "Bắt đầu", "Kết thúc", "Phòng" };
+        // --- BẢNG DỮ LIỆU ---
+        String[] cols = {"ID", "Lớp", "Ngày học", "Bắt đầu", "Kết thúc", "Phòng"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -137,8 +174,7 @@ public class SchedulePanel extends JPanel {
         table.setSelectionBackground(new Color(173, 216, 230));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting())
-                fillForm();
+            if (!e.getValueIsAdjusting()) fillForm();
         });
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -156,6 +192,10 @@ public class SchedulePanel extends JPanel {
         bottomPanel.add(lblTotal);
         add(bottomPanel, BorderLayout.SOUTH);
 
+        // --- GẮN SỰ KIỆN ---
+        btnSelectClass.addActionListener(e -> openClassDialog());
+        btnSelectRoom.addActionListener(e -> openRoomDialog());
+
         btnAdd.addActionListener(e -> addSchedule());
         btnUpdate.addActionListener(e -> updateSchedule());
         btnDelete.addActionListener(e -> deleteSchedule());
@@ -163,37 +203,53 @@ public class SchedulePanel extends JPanel {
         btnLoadByClass.addActionListener(e -> loadByClass());
     }
 
-    public void refreshData() {
-        loadCombos();
+    private void openClassDialog() {
         try {
-            loadTable(scheduleService.findAll());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            List<Class_> classes = teacherId != null ? classService.findByTeacherId(teacherId) : classService.findAll();
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            ClassSelectionDialog dialog = new ClassSelectionDialog(parentWindow, classes);
+            dialog.setVisible(true);
+
+            Class_ c = dialog.getSelectedClass();
+            if (c != null) {
+                selectedClass = c;
+                txtClassName.setText(c.getClassName());
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải lớp học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadCombos() {
-        cboClass.removeAllItems();
+    private void openRoomDialog() {
         try {
-            List<Class_> classes = teacherId != null ? classService.findByTeacherId(teacherId) : classService.findAll();
-            for (Class_ c : classes)
-                cboClass.addItem(new ClassItem(c.getClassId(), c.getClassName()));
+            List<Room> rooms = roomService.findAllActive();
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            RoomSelectionDialog dialog = new RoomSelectionDialog(parentWindow, rooms);
+            dialog.setVisible(true);
+
+            Room r = dialog.getSelectedRoom();
+            if (r != null) {
+                selectedRoom = r;
+                txtRoomName.setText(r.getRoomName());
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải phòng học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public void refreshData() {
+        try {
+            loadTable(scheduleService.findAll());
+            clearForm();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
-        }
-
-        cboRoom.removeAllItems();
-        try {
-            for (Room r : roomService.findAllActive())
-                cboRoom.addItem(new RoomItem(r.getRoomId(), r.getRoomName()));
-        } catch (Exception ignored) {
         }
     }
 
     private void loadTable(List<Schedule> list) {
         tableModel.setRowCount(0);
         for (Schedule s : list) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     s.getScheduleId(),
                     s.getClass_() != null ? s.getClass_().getClassName() : "",
                     s.getStudyDate(),
@@ -215,53 +271,64 @@ public class SchedulePanel extends JPanel {
         }
     }
 
-    private void setSelectedComboItem(JComboBox<?> cbo, String name) {
-        if (name == null || name.isEmpty()) {
-            if (cbo.getItemCount() > 0)
-                cbo.setSelectedIndex(0);
-            return;
-        }
-        for (int i = 0; i < cbo.getItemCount(); i++) {
-            Object obj = cbo.getItemAt(i);
-            if (obj != null && obj.toString().equals(name)) {
-                cbo.setSelectedIndex(i);
-                return;
-            }
-        }
-    }
-
     private void fillForm() {
         int row = table.getSelectedRow();
-        if (row < 0)
-            return;
+        if (row < 0) return;
 
-        setSelectedComboItem(cboClass, (String) tableModel.getValueAt(row, 1));
-        setSelectedComboItem(cboRoom, (String) tableModel.getValueAt(row, 5));
+        try {
+            Long id = (Long) tableModel.getValueAt(row, 0);
+            Schedule s = scheduleService.findById(id).orElse(null);
 
-        Object d = tableModel.getValueAt(row, 2);
-        DateUtil.setLocalDate(dcDate, d instanceof LocalDate ? (LocalDate) d : null);
-        txtStartTime.setText((String) tableModel.getValueAt(row, 3));
-        txtEndTime.setText((String) tableModel.getValueAt(row, 4));
+            if (s != null) {
+                if (s.getClass_() != null) {
+                    selectedClass = s.getClass_();
+                    txtClassName.setText(selectedClass.getClassName());
+                } else {
+                    selectedClass = null;
+                    txtClassName.setText("Chưa chọn lớp...");
+                }
+
+                if (s.getRoom() != null) {
+                    selectedRoom = s.getRoom();
+                    txtRoomName.setText(selectedRoom.getRoomName());
+                } else {
+                    selectedRoom = null;
+                    txtRoomName.setText("Chưa chọn phòng...");
+                }
+
+                DateUtil.setLocalDate(dcDate, s.getStudyDate());
+                if (s.getStartTime() != null) setSpinnerTime(spnStartTime, s.getStartTime());
+                if (s.getEndTime() != null) setSpinnerTime(spnEndTime, s.getEndTime());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void addSchedule() {
+        if (selectedClass == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp học!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (selectedRoom == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn phòng học!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             Schedule s = new Schedule();
-            ClassItem ci = (ClassItem) cboClass.getSelectedItem();
-            if (ci != null)
-                s.setClass_(classService.findById(ci.id).orElseThrow());
-            RoomItem ri = (RoomItem) cboRoom.getSelectedItem();
-            if (ri != null)
-                s.setRoom(roomService.findById(ri.id).orElseThrow());
+            s.setClass_(selectedClass);
+            s.setRoom(selectedRoom);
+
             LocalDate date = DateUtil.getLocalDate(dcDate);
-            if (date == null)
-                throw new IllegalArgumentException("Vui lòng chọn ngày học.");
+            if (date == null) throw new IllegalArgumentException("Vui lòng chọn ngày học.");
+
             s.setStudyDate(date);
-            s.setStartTime(LocalTime.parse(txtStartTime.getText().trim(), TF));
-            s.setEndTime(LocalTime.parse(txtEndTime.getText().trim(), TF));
+            s.setStartTime(getSpinnerTime(spnStartTime));
+            s.setEndTime(getSpinnerTime(spnEndTime));
+
             scheduleService.save(s);
             JOptionPane.showMessageDialog(this, "Thêm lịch thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            clearForm();
             refreshData();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -274,9 +341,14 @@ public class SchedulePanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn lịch cần cập nhật.");
             return;
         }
+        if (selectedClass == null || selectedRoom == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn Lớp và Phòng!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             Long id = (Long) tableModel.getValueAt(row, 0);
-            Schedule s = scheduleService.findById(id).orElseThrow();
+            Schedule s = scheduleService.findById(id).orElseThrow(() -> new Exception("Không tìm thấy lịch học trong CSDL"));
 
             if (teacherId != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
                     || !s.getClass_().getTeacher().getTeacherId().equals(teacherId))) {
@@ -285,21 +357,18 @@ public class SchedulePanel extends JPanel {
                 return;
             }
 
-            ClassItem ci = (ClassItem) cboClass.getSelectedItem();
-            if (ci != null)
-                s.setClass_(classService.findById(ci.id).orElseThrow());
-            RoomItem ri = (RoomItem) cboRoom.getSelectedItem();
-            if (ri != null)
-                s.setRoom(roomService.findById(ri.id).orElseThrow());
+            s.setClass_(selectedClass);
+            s.setRoom(selectedRoom);
+
             LocalDate date = DateUtil.getLocalDate(dcDate);
-            if (date == null)
-                throw new IllegalArgumentException("Vui lòng chọn ngày học.");
+            if (date == null) throw new IllegalArgumentException("Vui lòng chọn ngày học.");
+
             s.setStudyDate(date);
-            s.setStartTime(LocalTime.parse(txtStartTime.getText().trim(), TF));
-            s.setEndTime(LocalTime.parse(txtEndTime.getText().trim(), TF));
+            s.setStartTime(getSpinnerTime(spnStartTime));
+            s.setEndTime(getSpinnerTime(spnEndTime));
+
             scheduleService.update(s);
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            clearForm();
             refreshData();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -317,7 +386,7 @@ public class SchedulePanel extends JPanel {
             return;
         try {
             Long id = (Long) tableModel.getValueAt(row, 0);
-            Schedule s = scheduleService.findById(id).orElseThrow();
+            Schedule s = scheduleService.findById(id).orElseThrow(() -> new Exception("Không tìm thấy lịch học"));
 
             if (teacherId != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
                     || !s.getClass_().getTeacher().getTeacherId().equals(teacherId))) {
@@ -328,7 +397,6 @@ public class SchedulePanel extends JPanel {
 
             scheduleService.deleteById(id);
             JOptionPane.showMessageDialog(this, "Xóa thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            clearForm();
             refreshData();
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -336,40 +404,54 @@ public class SchedulePanel extends JPanel {
     }
 
     private void loadByClass() {
-        ClassItem ci = (ClassItem) cboClass.getSelectedItem();
-        if (ci == null) {
-            JOptionPane.showMessageDialog(this, "Chọn lớp trước.");
+        if (selectedClass == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn lớp trước bằng nút 🔍.", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
-            loadTable(scheduleService.findByClassId(ci.id));
+            loadTable(scheduleService.findByClassId(selectedClass.getClassId()));
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
         }
     }
 
     private void clearForm() {
+        selectedClass = null;
+        txtClassName.setText("Chưa chọn lớp...");
+        selectedRoom = null;
+        txtRoomName.setText("Chưa chọn phòng...");
+
         dcDate.setDate(null);
-        txtStartTime.setText("");
-        txtEndTime.setText("");
+        setSpinnerTime(spnStartTime, LocalTime.of(8, 0));
+        setSpinnerTime(spnEndTime, LocalTime.of(10, 0));
         table.clearSelection();
     }
 
-    private record ClassItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
+    // ── Các hàm tiện ích UI ───────────────────────────────────────────────────
+
+    private JSpinner createTimeSpinner() {
+        SpinnerDateModel model = new SpinnerDateModel();
+        JSpinner spinner = new JSpinner(model);
+        JSpinner.DateEditor editor = new JSpinner.DateEditor(spinner, "HH:mm");
+        spinner.setEditor(editor);
+        spinner.setPreferredSize(new Dimension(100, 28));
+        return spinner;
     }
 
-    private record RoomItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
+    private LocalTime getSpinnerTime(JSpinner spinner) {
+        java.util.Date d = (java.util.Date) spinner.getValue();
+        return d.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalTime();
     }
 
-    // Tiện ích UI
+    private void setSpinnerTime(JSpinner spinner, LocalTime time) {
+        if (time == null) return;
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.set(java.util.Calendar.HOUR_OF_DAY, time.getHour());
+        cal.set(java.util.Calendar.MINUTE, time.getMinute());
+        cal.set(java.util.Calendar.SECOND, 0);
+        spinner.setValue(cal.getTime());
+    }
+
     private static JButton makeButton(String text, Color bg) {
         JButton btn = new JButton(text);
         btn.setBackground(bg);

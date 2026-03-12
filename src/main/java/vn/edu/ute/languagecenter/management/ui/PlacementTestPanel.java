@@ -3,10 +3,10 @@ package vn.edu.ute.languagecenter.management.ui;
 import vn.edu.ute.languagecenter.management.model.PlacementTest;
 import vn.edu.ute.languagecenter.management.model.Student;
 import vn.edu.ute.languagecenter.management.service.ExamAndCertService;
-import vn.edu.ute.languagecenter.management.db.Jpa;
+import vn.edu.ute.languagecenter.management.service.StudentService;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.StudentSelectionDialog;
 
 import com.toedter.calendar.JDateChooser;
-import jakarta.persistence.EntityManager;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -16,11 +16,19 @@ import java.util.List;
 
 public class PlacementTestPanel extends JPanel {
 
+    // ── Services ──────────────────────────────────────────────────────────────
     private final ExamAndCertService service = new ExamAndCertService();
+    private final StudentService studentService = new StudentService();
 
+    // ── Components ────────────────────────────────────────────────────────────
     private JTable table;
     private DefaultTableModel tableModel;
-    private JComboBox<StudentItem> cboStudent;
+
+    // Thay thế ComboBox bằng TextField + Button
+    private Student selectedStudent = null;
+    private JTextField txtStudentName;
+    private JButton btnSelectStudent;
+
     private JDateChooser dcDate;
     private JTextField txtScore, txtNote;
     private JLabel lblSuggestedLevel;
@@ -46,15 +54,29 @@ public class PlacementTestPanel extends JPanel {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // 1. CHỌN HỌC VIÊN
         gbc.gridx = 0;
         gbc.gridy = 0;
         formPanel.add(new JLabel("Học viên:"), gbc);
+
+        txtStudentName = createTextField(20);
+        txtStudentName.setEditable(false);
+        txtStudentName.setText("Chưa chọn học viên...");
+
+        btnSelectStudent = new JButton("🔍");
+        btnSelectStudent.setToolTipText("Mở danh sách tìm kiếm học viên");
+
+        JPanel pnlStudentSelect = new JPanel(new BorderLayout(5, 0));
+        pnlStudentSelect.setOpaque(false);
+        pnlStudentSelect.add(txtStudentName, BorderLayout.CENTER);
+        pnlStudentSelect.add(btnSelectStudent, BorderLayout.EAST);
+
         gbc.gridx = 1;
         gbc.gridwidth = 2;
-        cboStudent = new JComboBox<>();
-        formPanel.add(cboStudent, gbc);
+        formPanel.add(pnlStudentSelect, gbc);
         gbc.gridwidth = 1;
 
+        // 2. NGÀY THI
         gbc.gridx = 0;
         gbc.gridy = 1;
         formPanel.add(new JLabel("Ngày thi:"), gbc);
@@ -63,6 +85,7 @@ public class PlacementTestPanel extends JPanel {
         DateUtil.setLocalDate(dcDate, LocalDate.now());
         formPanel.add(dcDate, gbc);
 
+        // 3. ĐIỂM
         gbc.gridx = 0;
         gbc.gridy = 2;
         formPanel.add(new JLabel("Điểm (0-10):"), gbc);
@@ -75,6 +98,7 @@ public class PlacementTestPanel extends JPanel {
         lblSuggestedLevel.setForeground(new Color(0, 100, 0));
         formPanel.add(lblSuggestedLevel, gbc);
 
+        // 4. GHI CHÚ
         gbc.gridx = 0;
         gbc.gridy = 3;
         formPanel.add(new JLabel("Ghi chú:"), gbc);
@@ -86,6 +110,7 @@ public class PlacementTestPanel extends JPanel {
 
         txtScore.addActionListener(e -> updateSuggestedLevel());
 
+        // --- BUTTONS ---
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
         btnAdd = makeButton("✅ Lưu kết quả", new Color(46, 139, 87));
@@ -106,6 +131,7 @@ public class PlacementTestPanel extends JPanel {
 
         add(formPanel, BorderLayout.NORTH);
 
+        // --- TABLE ---
         String[] cols = { "ID", "Học viên", "Ngày thi", "Điểm", "Cấp độ gợi ý", "Ghi chú" };
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
@@ -151,33 +177,38 @@ public class PlacementTestPanel extends JPanel {
         bottomPanel.add(lblTotal);
         add(bottomPanel, BorderLayout.SOUTH);
 
+        // --- GẮN SỰ KIỆN NÚT CHỌN HỌC VIÊN ---
+        btnSelectStudent.addActionListener(e -> openStudentDialog());
+
         btnAdd.addActionListener(e -> addTest());
         btnDelete.addActionListener(e -> deleteTest());
         btnClear.addActionListener(e -> clearForm());
         btnRefresh.addActionListener(e -> refreshData());
     }
 
-    public void refreshData() {
-        loadStudents();
+    private void openStudentDialog() {
         try {
-            loadTable(service.findAllTests());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            List<Student> activeStudents = studentService.getActiveStudents();
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            StudentSelectionDialog dialog = new StudentSelectionDialog(parentWindow, activeStudents);
+            dialog.setVisible(true);
+
+            Student s = dialog.getSelectedStudent();
+            if (s != null) {
+                selectedStudent = s;
+                txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải học viên: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void loadStudents() {
-        cboStudent.removeAllItems();
+    public void refreshData() {
         try {
-            EntityManager em = Jpa.em();
-            List<Student> students = em.createQuery("SELECT s FROM Student s", Student.class).getResultList();
-            em.close();
-            for (Student s : students) {
-                if (s.getStatus() != null && s.getStatus().name().equals("Active")) {
-                    cboStudent.addItem(new StudentItem(s.getStudentId(), s.getFullName()));
-                }
-            }
-        } catch (Exception ignored) {
+            loadTable(service.findAllTests());
+            clearForm(); // Xóa form khi refresh để đảm bảo an toàn
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
         }
     }
 
@@ -213,13 +244,13 @@ public class PlacementTestPanel extends JPanel {
             if (t != null) {
                 Student s = t.getStudent();
                 if (s != null) {
-                    for (int i = 0; i < cboStudent.getItemCount(); i++) {
-                        if (cboStudent.getItemAt(i).id().equals(s.getStudentId())) {
-                            cboStudent.setSelectedIndex(i);
-                            break;
-                        }
-                    }
+                    selectedStudent = s;
+                    txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
+                } else {
+                    selectedStudent = null;
+                    txtStudentName.setText("Chưa chọn học viên...");
                 }
+
                 DateUtil.setLocalDate(dcDate, t.getTestDate());
                 txtScore.setText(t.getScore() != null ? t.getScore().toString() : "");
                 updateSuggestedLevel();
@@ -241,27 +272,30 @@ public class PlacementTestPanel extends JPanel {
     }
 
     private void addTest() {
+        if (selectedStudent == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn học viên!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             PlacementTest t = new PlacementTest();
-            StudentItem si = (StudentItem) cboStudent.getSelectedItem();
-            if (si != null) {
-                EntityManager em = Jpa.em();
-                t.setStudent(em.find(Student.class, si.id));
-                em.close();
-            }
+            t.setStudent(selectedStudent);
+
             LocalDate date = DateUtil.getLocalDate(dcDate);
             if (date == null)
                 throw new IllegalArgumentException("Vui lòng chọn ngày thi.");
             t.setTestDate(date);
+
             String sc = txtScore.getText().trim();
             if (!sc.isEmpty())
                 t.setScore(new BigDecimal(sc));
+
             t.setNote(txtNote.getText().trim());
             service.saveTest(t);
+
             JOptionPane.showMessageDialog(this, "Lưu kết quả thành công!", "Thành công",
                     JOptionPane.INFORMATION_MESSAGE);
-            clearForm();
-            refreshData();
+            refreshData(); // Đã bao gồm gọi clearForm()
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -287,18 +321,13 @@ public class PlacementTestPanel extends JPanel {
     }
 
     private void clearForm() {
+        selectedStudent = null;
+        txtStudentName.setText("Chưa chọn học viên...");
         DateUtil.setLocalDate(dcDate, LocalDate.now());
         txtScore.setText("");
         txtNote.setText("");
         lblSuggestedLevel.setText("Cấp độ gợi ý: ---");
         table.clearSelection();
-    }
-
-    private record StudentItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
     }
 
     // Tiện ích UI

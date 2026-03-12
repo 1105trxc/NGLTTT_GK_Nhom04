@@ -7,10 +7,12 @@ import vn.edu.ute.languagecenter.management.model.Teacher;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.CourseService;
 import vn.edu.ute.languagecenter.management.service.RoomService;
+import vn.edu.ute.languagecenter.management.service.TeacherService; // <-- Đảm bảo có class này
+import vn.edu.ute.languagecenter.management.ui.gui_finance.CourseSelectionDialog;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.RoomSelectionDialog;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.TeacherSelectionDialog;
 
 import com.toedter.calendar.JDateChooser;
-import jakarta.persistence.EntityManager;
-import vn.edu.ute.languagecenter.management.db.Jpa;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -20,19 +22,33 @@ import java.util.List;
 
 public class ClassPanel extends JPanel {
 
+    // ── Services ──────────────────────────────────────────────────────────────
     private final ClassService classService = new ClassService();
     private final CourseService courseService = new CourseService();
     private final RoomService roomService = new RoomService();
+    private final TeacherService teacherService = new TeacherService();
 
+    // ── Components ────────────────────────────────────────────────────────────
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtName, txtMaxStudent, txtSearch;
     private JDateChooser dcStartDate, dcEndDate;
-    private JComboBox<CourseItem> cboCourse;
-    private JComboBox<TeacherItem> cboTeacher;
-    private JComboBox<RoomItem> cboRoom;
     private JComboBox<String> cboStatus;
-    private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch;
+
+    // Components thay cho ComboBox cũ
+    private Course selectedCourse = null;
+    private JTextField txtCourseName;
+    private JButton btnSelectCourse;
+
+    private Teacher selectedTeacher = null;
+    private JTextField txtTeacherName;
+    private JButton btnSelectTeacher;
+
+    private Room selectedRoom = null;
+    private JTextField txtRoomName;
+    private JButton btnSelectRoom;
+
+    private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearchAction;
     private Long teacherId;
 
     public ClassPanel(Long teacherId) {
@@ -59,31 +75,56 @@ public class ClassPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = 0;
         formPanel.add(new JLabel("Tên lớp:"), gbc);
+
         gbc.gridx = 1;
         txtName = createTextField(15);
         formPanel.add(txtName, gbc);
 
         gbc.gridx = 2;
         formPanel.add(new JLabel("Khóa học:"), gbc);
+
         gbc.gridx = 3;
-        cboCourse = new JComboBox<>();
-        formPanel.add(cboCourse, gbc);
+        txtCourseName = createTextField(15);
+        txtCourseName.setEditable(false);
+        txtCourseName.setText("Chưa chọn khóa học...");
+        btnSelectCourse = new JButton("🔍");
+        JPanel pnlCourse = new JPanel(new BorderLayout(5, 0));
+        pnlCourse.setOpaque(false);
+        pnlCourse.add(txtCourseName, BorderLayout.CENTER);
+        pnlCourse.add(btnSelectCourse, BorderLayout.EAST);
+        formPanel.add(pnlCourse, gbc);
 
         // Row 1
         gbc.gridx = 0;
         gbc.gridy = 1;
         formPanel.add(new JLabel("Giáo viên:"), gbc);
+
         gbc.gridx = 1;
-        cboTeacher = new JComboBox<>();
-        formPanel.add(cboTeacher, gbc);
+        txtTeacherName = createTextField(15);
+        txtTeacherName.setEditable(false);
+        txtTeacherName.setText("Chưa chọn giáo viên...");
+        btnSelectTeacher = new JButton("🔍");
+        JPanel pnlTeacher = new JPanel(new BorderLayout(5, 0));
+        pnlTeacher.setOpaque(false);
+        pnlTeacher.add(txtTeacherName, BorderLayout.CENTER);
+        pnlTeacher.add(btnSelectTeacher, BorderLayout.EAST);
+        formPanel.add(pnlTeacher, gbc);
 
         gbc.gridx = 2;
         formPanel.add(new JLabel("Phòng học:"), gbc);
-        gbc.gridx = 3;
-        cboRoom = new JComboBox<>();
-        formPanel.add(cboRoom, gbc);
 
-        // Row 2: Date pickers
+        gbc.gridx = 3;
+        txtRoomName = createTextField(15);
+        txtRoomName.setEditable(false);
+        txtRoomName.setText("Chưa chọn phòng...");
+        btnSelectRoom = new JButton("🔍");
+        JPanel pnlRoom = new JPanel(new BorderLayout(5, 0));
+        pnlRoom.setOpaque(false);
+        pnlRoom.add(txtRoomName, BorderLayout.CENTER);
+        pnlRoom.add(btnSelectRoom, BorderLayout.EAST);
+        formPanel.add(pnlRoom, gbc);
+
+        // Row 2
         gbc.gridx = 0;
         gbc.gridy = 2;
         formPanel.add(new JLabel("Ngày bắt đầu:"), gbc);
@@ -108,7 +149,7 @@ public class ClassPanel extends JPanel {
         gbc.gridx = 2;
         formPanel.add(new JLabel("Trạng thái:"), gbc);
         gbc.gridx = 3;
-        cboStatus = new JComboBox<>(new String[] { "Planned", "Open", "Ongoing", "Completed", "Cancelled" });
+        cboStatus = new JComboBox<>(new String[]{"Planned", "Open", "Ongoing", "Completed", "Cancelled"});
         formPanel.add(cboStatus, gbc);
 
         // Buttons
@@ -137,8 +178,7 @@ public class ClassPanel extends JPanel {
         add(formPanel, BorderLayout.NORTH);
 
         // Table
-        String[] cols = { "ID", "Tên lớp", "Khóa học", "Giáo viên", "Phòng", "Bắt đầu", "Kết thúc", "Sĩ số max",
-                "Trạng thái" };
+        String[] cols = {"ID", "Tên lớp", "Khóa học", "Giáo viên", "Phòng", "Bắt đầu", "Kết thúc", "Sĩ số max", "Trạng thái"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -164,8 +204,7 @@ public class ClassPanel extends JPanel {
         table.setSelectionBackground(new Color(173, 216, 230));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting())
-                fillForm();
+            if (!e.getValueIsAdjusting()) fillForm();
         });
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -175,8 +214,8 @@ public class ClassPanel extends JPanel {
         searchPanel.add(new JLabel("Tìm kiếm:"));
         txtSearch = createTextField(20);
         searchPanel.add(txtSearch);
-        btnSearch = makeButton("🔍 Tìm", new Color(70, 130, 180));
-        searchPanel.add(btnSearch);
+        btnSearchAction = makeButton("🔍 Tìm", new Color(70, 130, 180));
+        searchPanel.add(btnSearchAction);
 
         JPanel centerPanel = new JPanel(new BorderLayout(0, 6));
         centerPanel.setOpaque(false);
@@ -184,7 +223,7 @@ public class ClassPanel extends JPanel {
         centerPanel.add(new JScrollPane(table), BorderLayout.CENTER);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Bottom panel đếm Số lượng
+        // Bottom panel
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         bottomPanel.setOpaque(false);
         JLabel lblTotal = new JLabel("Tổng bản ghi: 0");
@@ -192,16 +231,76 @@ public class ClassPanel extends JPanel {
         bottomPanel.add(lblTotal);
         add(bottomPanel, BorderLayout.SOUTH);
 
-        // Events
+        // Events Dialog
+        btnSelectCourse.addActionListener(e -> openCourseDialog());
+        btnSelectTeacher.addActionListener(e -> openTeacherDialog());
+        btnSelectRoom.addActionListener(e -> openRoomDialog());
+
+        // Events CRUD
         btnAdd.addActionListener(e -> addClass());
         btnUpdate.addActionListener(e -> updateClass());
         btnDelete.addActionListener(e -> deleteClass());
         btnClear.addActionListener(e -> clearForm());
-        btnSearch.addActionListener(e -> searchClass());
+        btnSearchAction.addActionListener(e -> searchClass());
+    }
+
+    private void openCourseDialog() {
+        try {
+            List<Course> list = courseService.findAllActive();
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            CourseSelectionDialog dialog = new CourseSelectionDialog(owner, list);
+            dialog.setVisible(true);
+
+            Course result = dialog.getSelectedCourse();
+            if (result != null) {
+                selectedCourse = result;
+                txtCourseName.setText(result.getCourseName());
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải khóa học: " + ex.getMessage());
+        }
+    }
+
+    private void openTeacherDialog() {
+        try {
+            List<Teacher> list = teacherService.getActiveTeachers();
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            TeacherSelectionDialog dialog = new TeacherSelectionDialog(owner, list);
+            dialog.setVisible(true);
+
+            // Xử lý lấy đối tượng ra
+            if (!dialog.isVisible()) {
+                selectedTeacher = dialog.getSelectedTeacher();
+                if (selectedTeacher != null) {
+                    txtTeacherName.setText(selectedTeacher.getFullName());
+                } else {
+                    // Xóa trống
+                    txtTeacherName.setText("Chưa chọn giáo viên...");
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải giáo viên: " + ex.getMessage());
+        }
+    }
+
+    private void openRoomDialog() {
+        try {
+            List<Room> list = roomService.findAllActive();
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            RoomSelectionDialog dialog = new RoomSelectionDialog(owner, list);
+            dialog.setVisible(true);
+
+            Room result = dialog.getSelectedRoom();
+            if (result != null) {
+                selectedRoom = result;
+                txtRoomName.setText(result.getRoomName());
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải phòng: " + ex.getMessage());
+        }
     }
 
     public void refreshData() {
-        loadCombos();
         try {
             if (teacherId != null) {
                 loadTable(classService.findByTeacherId(teacherId));
@@ -213,41 +312,10 @@ public class ClassPanel extends JPanel {
         }
     }
 
-    private void loadCombos() {
-        cboCourse.removeAllItems();
-        try {
-            for (Course c : courseService.findAllActive())
-                cboCourse.addItem(new CourseItem(c.getCourseId(), c.getCourseName()));
-        } catch (Exception ignored) {
-        }
-
-        cboTeacher.removeAllItems();
-        cboTeacher.addItem(new TeacherItem(null, "-- Không chọn --"));
-        try {
-            EntityManager em = Jpa.em();
-            List<Teacher> teachers = em.createQuery("SELECT t FROM Teacher t", Teacher.class).getResultList();
-            em.close();
-            for (Teacher t : teachers) {
-                if (t.getStatus() != null && t.getStatus().name().equals("Active")) {
-                    cboTeacher.addItem(new TeacherItem(t.getTeacherId(), t.getFullName()));
-                }
-            }
-        } catch (Exception ignored) {
-        }
-
-        cboRoom.removeAllItems();
-        cboRoom.addItem(new RoomItem(null, "-- Không chọn --"));
-        try {
-            for (Room r : roomService.findAllActive())
-                cboRoom.addItem(new RoomItem(r.getRoomId(), r.getRoomName()));
-        } catch (Exception ignored) {
-        }
-    }
-
     private void loadTable(List<Class_> classes) {
         tableModel.setRowCount(0);
         for (Class_ c : classes) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     c.getClassId(), c.getClassName(),
                     c.getCourse() != null ? c.getCourse().getCourseName() : "",
                     c.getTeacher() != null ? c.getTeacher().getFullName() : "",
@@ -255,64 +323,75 @@ public class ClassPanel extends JPanel {
                     c.getStartDate(), c.getEndDate(), c.getMaxStudent(), c.getStatus().name()
             });
         }
+        updateTotalLabel(classes.size());
     }
 
-    private void setSelectedComboItem(JComboBox<?> cbo, String name) {
-        if (name == null || name.isEmpty()) {
-            if (cbo.getItemCount() > 0)
-                cbo.setSelectedIndex(0);
-            return;
-        }
-        for (int i = 0; i < cbo.getItemCount(); i++) {
-            Object obj = cbo.getItemAt(i);
-            if (obj != null && obj.toString().equals(name)) {
-                cbo.setSelectedIndex(i);
-                return;
+    private void updateTotalLabel(int total) {
+        Component south = ((BorderLayout) getLayout()).getLayoutComponent(BorderLayout.SOUTH);
+        if (south instanceof JPanel) {
+            for (Component c : ((JPanel) south).getComponents()) {
+                if (c instanceof JLabel && "lblTotal".equals(c.getName()))
+                    ((JLabel) c).setText("Tổng bản ghi: " + total);
             }
         }
     }
 
     private void fillForm() {
         int row = table.getSelectedRow();
-        if (row < 0)
-            return;
-        txtName.setText((String) tableModel.getValueAt(row, 1));
+        if (row < 0) return;
 
-        setSelectedComboItem(cboCourse, (String) tableModel.getValueAt(row, 2));
-        setSelectedComboItem(cboTeacher, (String) tableModel.getValueAt(row, 3));
-        setSelectedComboItem(cboRoom, (String) tableModel.getValueAt(row, 4));
+        try {
+            Long id = (Long) tableModel.getValueAt(row, 0);
+            Class_ c = classService.findById(id).orElse(null);
 
-        Object sd = tableModel.getValueAt(row, 5);
-        DateUtil.setLocalDate(dcStartDate, sd instanceof LocalDate ? (LocalDate) sd : null);
-        Object ed = tableModel.getValueAt(row, 6);
-        DateUtil.setLocalDate(dcEndDate, ed instanceof LocalDate ? (LocalDate) ed : null);
-        txtMaxStudent.setText(tableModel.getValueAt(row, 7).toString());
-        cboStatus.setSelectedItem(tableModel.getValueAt(row, 8));
+            if (c != null) {
+                txtName.setText(c.getClassName());
+
+                // Set Course
+                selectedCourse = c.getCourse();
+                txtCourseName.setText(selectedCourse != null ? selectedCourse.getCourseName() : "Chưa chọn khóa học...");
+
+                // Set Teacher
+                selectedTeacher = c.getTeacher();
+                txtTeacherName.setText(selectedTeacher != null ? selectedTeacher.getFullName() : "Chưa chọn giáo viên...");
+
+                // Set Room
+                selectedRoom = c.getRoom();
+                txtRoomName.setText(selectedRoom != null ? selectedRoom.getRoomName() : "Chưa chọn phòng...");
+
+                DateUtil.setLocalDate(dcStartDate, c.getStartDate());
+                DateUtil.setLocalDate(dcEndDate, c.getEndDate());
+                txtMaxStudent.setText(c.getMaxStudent() != null ? c.getMaxStudent().toString() : "0");
+                cboStatus.setSelectedItem(c.getStatus().name());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void addClass() {
+        if (selectedCourse == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn khóa học!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             Class_ c = new Class_();
             c.setClassName(txtName.getText().trim());
-            CourseItem ci = (CourseItem) cboCourse.getSelectedItem();
-            if (ci != null)
-                c.setCourse(courseService.findById(ci.id).orElseThrow());
-            TeacherItem ti = (TeacherItem) cboTeacher.getSelectedItem();
-            if (ti != null && ti.id != null) {
-                EntityManager em = Jpa.em();
-                c.setTeacher(em.find(Teacher.class, ti.id));
-                em.close();
-            }
-            RoomItem ri = (RoomItem) cboRoom.getSelectedItem();
-            if (ri != null && ri.id != null)
-                c.setRoom(roomService.findById(ri.id).orElseThrow());
+            c.setCourse(selectedCourse);
+            c.setTeacher(selectedTeacher); // Có thể null
+            c.setRoom(selectedRoom);       // Có thể null
+
             LocalDate startDate = DateUtil.getLocalDate(dcStartDate);
-            if (startDate == null)
-                throw new IllegalArgumentException("Vui lòng chọn ngày bắt đầu.");
+            if (startDate == null) throw new IllegalArgumentException("Vui lòng chọn ngày bắt đầu.");
+
             c.setStartDate(startDate);
             c.setEndDate(DateUtil.getLocalDate(dcEndDate));
-            c.setMaxStudent(Integer.parseInt(txtMaxStudent.getText().trim()));
+
+            String maxStr = txtMaxStudent.getText().trim();
+            c.setMaxStudent(maxStr.isEmpty() ? 0 : Integer.parseInt(maxStr));
             c.setStatus(Class_.ClassStatus.valueOf((String) cboStatus.getSelectedItem()));
+
             classService.save(c);
             JOptionPane.showMessageDialog(this, "Thêm lớp thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             clearForm();
@@ -328,33 +407,29 @@ public class ClassPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn lớp cần cập nhật.");
             return;
         }
+        if (selectedCourse == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn khóa học!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         try {
             Long id = (Long) tableModel.getValueAt(row, 0);
-            Class_ c = classService.findById(id).orElseThrow();
+            Class_ c = classService.findById(id).orElseThrow(() -> new Exception("Không tìm thấy lớp."));
+
             c.setClassName(txtName.getText().trim());
-            CourseItem ci = (CourseItem) cboCourse.getSelectedItem();
-            if (ci != null)
-                c.setCourse(courseService.findById(ci.id).orElseThrow());
-            TeacherItem ti = (TeacherItem) cboTeacher.getSelectedItem();
-            if (ti != null && ti.id != null) {
-                EntityManager em = Jpa.em();
-                c.setTeacher(em.find(Teacher.class, ti.id));
-                em.close();
-            } else {
-                c.setTeacher(null);
-            }
-            RoomItem ri = (RoomItem) cboRoom.getSelectedItem();
-            if (ri != null && ri.id != null)
-                c.setRoom(roomService.findById(ri.id).orElseThrow());
-            else
-                c.setRoom(null);
+            c.setCourse(selectedCourse);
+            c.setTeacher(selectedTeacher);
+            c.setRoom(selectedRoom);
+
             LocalDate startDate = DateUtil.getLocalDate(dcStartDate);
-            if (startDate == null)
-                throw new IllegalArgumentException("Vui lòng chọn ngày bắt đầu.");
+            if (startDate == null) throw new IllegalArgumentException("Vui lòng chọn ngày bắt đầu.");
             c.setStartDate(startDate);
             c.setEndDate(DateUtil.getLocalDate(dcEndDate));
-            c.setMaxStudent(Integer.parseInt(txtMaxStudent.getText().trim()));
+
+            String maxStr = txtMaxStudent.getText().trim();
+            c.setMaxStudent(maxStr.isEmpty() ? 0 : Integer.parseInt(maxStr));
             c.setStatus(Class_.ClassStatus.valueOf((String) cboStatus.getSelectedItem()));
+
             classService.update(c);
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             clearForm();
@@ -400,28 +475,17 @@ public class ClassPanel extends JPanel {
         dcStartDate.setDate(null);
         dcEndDate.setDate(null);
         cboStatus.setSelectedIndex(0);
+
+        selectedCourse = null;
+        txtCourseName.setText("Chưa chọn khóa học...");
+
+        selectedTeacher = null;
+        txtTeacherName.setText("Chưa chọn giáo viên...");
+
+        selectedRoom = null;
+        txtRoomName.setText("Chưa chọn phòng...");
+
         table.clearSelection();
-    }
-
-    private record CourseItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    private record TeacherItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
-    }
-
-    private record RoomItem(Long id, String name) {
-        @Override
-        public String toString() {
-            return name;
-        }
     }
 
     // Tiện ích UI

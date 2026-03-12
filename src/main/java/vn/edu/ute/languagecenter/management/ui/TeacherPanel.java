@@ -17,11 +17,11 @@ import java.util.List;
  * TeacherPanel - Form CRUD quản lý hồ sơ giáo viên.
  * Package: gui.operation (theo quy chuẩn skill swing-module-builder - Người 2)
  * extends JPanel (không phải JFrame) để nhúng vào MainDashboard qua CardLayout.
- *
+ * <p>
  * Chức năng:
  * - Hiển thị danh sách giáo viên trong JTable
  * - Thêm / Sửa / Xoá giáo viên
- * - Tìm kiếm / lọc bằng Java Stream Lambda
+ * - Tìm kiếm / lọc bằng Java Stream Lambda (Hỗ trợ Live Search)
  */
 public class TeacherPanel extends JPanel {
 
@@ -59,13 +59,15 @@ public class TeacherPanel extends JPanel {
         loadData(); // nạp dữ liệu từ DB khi khởi tạo
     }
 
-    /** Tiêu đề + thanh tìm kiếm */
+    /**
+     * Tiêu đề + thanh tìm kiếm
+     */
     private JPanel buildTopBar() {
         JPanel panel = new JPanel(new BorderLayout(10, 0));
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(0, 0, 16, 0));
 
-        JLabel lbl = new JLabel("👨\u200D🏫  Quản Lý Giáo Viên");
+        JLabel lbl = new JLabel("👨‍🏫  Quản Lý Giáo Viên");
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lbl.setForeground(new Color(25, 55, 95));
         panel.add(lbl, BorderLayout.WEST);
@@ -74,7 +76,7 @@ public class TeacherPanel extends JPanel {
         sp.setOpaque(false);
         txtSearch = new JTextField(18);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtSearch.setToolTipText("Tìm kiếm theo tên hoặc chuyên môn");
+        txtSearch.setToolTipText("Tìm kiếm theo tên, SĐT, Email hoặc chuyên môn");
         txtSearch.setBackground(Color.WHITE);
         txtSearch.setForeground(new Color(30, 30, 30));
         txtSearch.setCaretColor(COLOR_PRIMARY);
@@ -87,10 +89,38 @@ public class TeacherPanel extends JPanel {
         styleBtn(btnSearch, COLOR_PRIMARY);
         styleBtn(btnRefresh, new Color(80, 120, 80));
 
-        // Lambda: gọi searchData khi click hoặc Enter
+        // Vẫn giữ sự kiện click/Enter cho những ai có thói quen cũ
         btnSearch.addActionListener(e -> searchData());
         txtSearch.addActionListener(e -> searchData());
-        btnRefresh.addActionListener(e -> loadData());
+
+        // --- BẮT ĐẦU: LIVE SEARCH ---
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            private void doLiveSearch() {
+                // Dùng invokeLater để UI không bị giật khi gõ phím nhanh
+                SwingUtilities.invokeLater(() -> searchData());
+            }
+        });
+        // --- KẾT THÚC: LIVE SEARCH ---
+
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText(""); // Xóa trắng ô tìm kiếm khi làm mới
+            loadData();
+        });
 
         sp.add(new JLabel("Tìm: "));
         sp.add(txtSearch);
@@ -100,9 +130,11 @@ public class TeacherPanel extends JPanel {
         return panel;
     }
 
-    /** JScrollPane chứa JTable danh sách giáo viên */
+    /**
+     * JScrollPane chứa JTable danh sách giáo viên
+     */
     private JScrollPane buildCenter() {
-        String[] cols = { "ID", "Họ Tên", "Điện Thoại", "Email", "Chuyên Môn", "Ngày Thuê", "Trạng Thái" };
+        String[] cols = {"ID", "Họ Tên", "Điện Thoại", "Email", "Chuyên Môn", "Ngày Thuê", "Trạng Thái"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
@@ -144,7 +176,9 @@ public class TeacherPanel extends JPanel {
         return scroll;
     }
 
-    /** Form nhập liệu bên phải */
+    /**
+     * Form nhập liệu bên phải
+     */
     private JPanel buildFormPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -209,13 +243,15 @@ public class TeacherPanel extends JPanel {
     // LOGIC THAO TÁC DỮ LIỆU
     // =============================================================
 
-    /** Nạp toàn bộ giáo viên từ DB lên JTable */
+    /**
+     * Nạp toàn bộ giáo viên từ DB lên JTable
+     */
     private void loadData() {
         tableModel.setRowCount(0); // xóa dữ liệu cũ trong bảng
         List<Teacher> list = teacherService.getAllTeachers();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         for (Teacher t : list) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     t.getTeacherId(), t.getFullName(), t.getPhone(),
                     t.getEmail(), t.getSpecialty(),
                     t.getHireDate() != null ? t.getHireDate().format(fmt) : "",
@@ -228,9 +264,7 @@ public class TeacherPanel extends JPanel {
     /**
      * Lọc giáo viên theo từ khoá tìm kiếm.
      * Dùng Java Stream Lambda (tuân thủ skill lambda-stream-processor):
-     * - Nhận List<Teacher> từ DAO
-     * - filter() theo tên hoặc chuyên môn
-     * - forEach() để đổ dữ liệu lên bảng
+     * Hỗ trợ tìm theo: Tên, Chuyên môn, SĐT, Email.
      */
     private void searchData() {
         String keyword = txtSearch.getText().trim().toLowerCase();
@@ -243,14 +277,13 @@ public class TeacherPanel extends JPanel {
         List<Teacher> list = teacherService.getAllTeachers(); // lấy từ DB (List<T>)
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        // Stream pipeline: filter -> forEach (không thay đổi list gốc - tính
-        // Immutability)
+        // Stream pipeline: filter -> forEach (không thay đổi list gốc - tính Immutability)
         list.stream()
-                // Intermediate operation: filter theo tên hoặc chuyên môn
                 .filter(t -> (t.getFullName() != null && t.getFullName().toLowerCase().contains(keyword))
-                        || (t.getSpecialty() != null && t.getSpecialty().toLowerCase().contains(keyword)))
-                // Terminal operation: forEach để thêm từng dòng vào JTable
-                .forEach(t -> tableModel.addRow(new Object[] {
+                        || (t.getSpecialty() != null && t.getSpecialty().toLowerCase().contains(keyword))
+                        || (t.getPhone() != null && t.getPhone().contains(keyword))
+                        || (t.getEmail() != null && t.getEmail().toLowerCase().contains(keyword)))
+                .forEach(t -> tableModel.addRow(new Object[]{
                         t.getTeacherId(), t.getFullName(), t.getPhone(),
                         t.getEmail(), t.getSpecialty(),
                         t.getHireDate() != null ? t.getHireDate().format(fmt) : "",
@@ -258,7 +291,9 @@ public class TeacherPanel extends JPanel {
                 }));
     }
 
-    /** Điền dữ liệu của dòng đang chọn trong bảng vào form */
+    /**
+     * Điền dữ liệu của dòng đang chọn trong bảng vào form
+     */
     private void fillFormFromSelectedRow() {
         int row = table.getSelectedRow();
         selectedTeacherId = (Long) tableModel.getValueAt(row, 0);
@@ -272,7 +307,9 @@ public class TeacherPanel extends JPanel {
             cmbStatus.setSelectedItem(sv);
     }
 
-    /** Thêm giáo viên mới từ dữ liệu form */
+    /**
+     * Thêm giáo viên mới từ dữ liệu form
+     */
     private void addTeacher() {
         if (txtName.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập Họ và Tên!", "Thiếu thông tin",
@@ -290,13 +327,17 @@ public class TeacherPanel extends JPanel {
             t.setStatus((Teacher.ActiveStatus) cmbStatus.getSelectedItem());
             teacherService.addTeacher(t);
             JOptionPane.showMessageDialog(this, "✅ Thêm giáo viên thành công!");
+
+            txtSearch.setText(""); // Xóa text tìm kiếm
             loadData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /** Cập nhật thông tin giáo viên đang chọn */
+    /**
+     * Cập nhật thông tin giáo viên đang chọn
+     */
     private void updateTeacher() {
         if (selectedTeacherId == null) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một giáo viên trong bảng!", "Chưa chọn",
@@ -315,13 +356,16 @@ public class TeacherPanel extends JPanel {
             t.setStatus((Teacher.ActiveStatus) cmbStatus.getSelectedItem());
             teacherService.updateTeacher(t);
             JOptionPane.showMessageDialog(this, "✅ Cập nhật giáo viên thành công!");
-            loadData();
+
+            searchData(); // Giữ nguyên bộ lọc đang có
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /** Xóa giáo viên đang chọn khỏi DB */
+    /**
+     * Xóa giáo viên đang chọn khỏi DB
+     */
     private void deleteTeacher() {
         if (selectedTeacherId == null) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một giáo viên trong bảng!", "Chưa chọn",
@@ -333,7 +377,9 @@ public class TeacherPanel extends JPanel {
             try {
                 teacherService.deleteTeacher(selectedTeacherId);
                 JOptionPane.showMessageDialog(this, "✅ Xóa giáo viên thành công!");
-                loadData();
+
+                searchData(); // Cập nhật bảng nhưng vẫn giữ text bộ lọc hiện tại
+                clearForm();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "❌ Lỗi khi xóa: " + ex.getMessage(), "Lỗi",
                         JOptionPane.ERROR_MESSAGE);
@@ -341,7 +387,9 @@ public class TeacherPanel extends JPanel {
         }
     }
 
-    /** Reset form nhập liệu về trạng thái rỗng */
+    /**
+     * Reset form nhập liệu về trạng thái rỗng
+     */
     private void clearForm() {
         selectedTeacherId = null;
         txtName.setText("");

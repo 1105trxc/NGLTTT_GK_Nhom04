@@ -48,6 +48,7 @@ public class BranchPanel extends JPanel {
         lbl.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lbl.setForeground(new Color(25, 55, 95));
         panel.add(lbl, BorderLayout.WEST);
+
         JPanel sp = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         sp.setOpaque(false);
         txtSearch = new JTextField(18);
@@ -58,13 +59,44 @@ public class BranchPanel extends JPanel {
         txtSearch.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(180, 190, 210), 1),
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)));
+
         JButton btnSearch = new JButton("🔍 Tìm");
         JButton btnRefresh = new JButton("↻ Làm mới");
         styleBtn(btnSearch, COLOR_PRIMARY);
         styleBtn(btnRefresh, new Color(80, 120, 80));
+
+        // Vẫn giữ sự kiện cho nút Tìm nếu người dùng có thói quen click
         btnSearch.addActionListener(e -> searchData());
-        txtSearch.addActionListener(e -> searchData());
-        btnRefresh.addActionListener(e -> loadData());
+
+        // --- BẮT ĐẦU: LIVE SEARCH ---
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                doLiveSearch();
+            }
+
+            private void doLiveSearch() {
+                // Dùng invokeLater để UI không bị giật khi gõ phím nhanh
+                SwingUtilities.invokeLater(() -> searchData());
+            }
+        });
+        // --- KẾT THÚC: LIVE SEARCH ---
+
+        btnRefresh.addActionListener(e -> {
+            txtSearch.setText(""); // Xóa trắng ô tìm kiếm khi làm mới
+            loadData();
+        });
+
         sp.add(new JLabel("Tìm: "));
         sp.add(txtSearch);
         sp.add(btnSearch);
@@ -74,7 +106,7 @@ public class BranchPanel extends JPanel {
     }
 
     private JScrollPane buildCenter() {
-        String[] cols = { "ID", "Tên Chi Nhánh", "Địa Chỉ", "Điện Thoại", "Trạng Thái" };
+        String[] cols = {"ID", "Tên Chi Nhánh", "Địa Chỉ", "Điện Thoại", "Trạng Thái"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -162,7 +194,7 @@ public class BranchPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         for (Branch b : branchDAO.findAll()) {
-            tableModel.addRow(new Object[] {
+            tableModel.addRow(new Object[]{
                     b.getBranchId(), b.getBranchName(),
                     b.getAddress(), b.getPhone(), b.getStatus()
             });
@@ -170,7 +202,9 @@ public class BranchPanel extends JPanel {
         clearForm();
     }
 
-    /** Lọc chi nhánh bằng Java Stream Lambda (filter + forEach). */
+    /**
+     * Lọc chi nhánh bằng Java Stream Lambda (filter + forEach).
+     */
     private void searchData() {
         String kw = txtSearch.getText().trim().toLowerCase();
         if (kw.isEmpty()) {
@@ -181,8 +215,9 @@ public class BranchPanel extends JPanel {
         List<Branch> list = branchDAO.findAll();
         list.stream()
                 .filter(b -> (b.getBranchName() != null && b.getBranchName().toLowerCase().contains(kw))
-                        || (b.getAddress() != null && b.getAddress().toLowerCase().contains(kw)))
-                .forEach(b -> tableModel.addRow(new Object[] {
+                        || (b.getAddress() != null && b.getAddress().toLowerCase().contains(kw))
+                        || (b.getPhone() != null && b.getPhone().contains(kw))) // Hỗ trợ thêm tìm theo SĐT
+                .forEach(b -> tableModel.addRow(new Object[]{
                         b.getBranchId(), b.getBranchName(),
                         b.getAddress(), b.getPhone(), b.getStatus()
                 }));
@@ -213,6 +248,8 @@ public class BranchPanel extends JPanel {
             b.setStatus((Branch.ActiveStatus) cmbStatus.getSelectedItem());
             branchDAO.save(b);
             JOptionPane.showMessageDialog(this, "✅ Thêm chi nhánh thành công!");
+
+            txtSearch.setText(""); // Xóa text tìm kiếm
             loadData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -233,7 +270,8 @@ public class BranchPanel extends JPanel {
             b.setStatus((Branch.ActiveStatus) cmbStatus.getSelectedItem());
             branchDAO.update(b);
             JOptionPane.showMessageDialog(this, "✅ Cập nhật chi nhánh thành công!");
-            loadData();
+
+            searchData(); // Cập nhật lại kết quả đang search
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
@@ -249,7 +287,9 @@ public class BranchPanel extends JPanel {
             try {
                 branchDAO.delete(selectedBranchId);
                 JOptionPane.showMessageDialog(this, "✅ Xóa chi nhánh thành công!");
-                loadData();
+
+                searchData(); // Cập nhật lại kết quả đang search
+                clearForm();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "❌ Lỗi khi xóa: " + ex.getMessage(), "Lỗi",
                         JOptionPane.ERROR_MESSAGE);

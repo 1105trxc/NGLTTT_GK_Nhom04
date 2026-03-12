@@ -15,7 +15,7 @@ import javax.swing.*;
 public class App {
 
     // *** ĐỔI THÀNH false KHI NỘP BÀI / DEMO THẬT ***
-    private static final boolean DEV_MODE = false;
+    private static final boolean DEV_MODE = true;
 
     // Nếu DEV_MODE = true, bạn được chọn quyền để test nhanh (không cần đăng nhập).
     // Các giá trị có thể chọn:
