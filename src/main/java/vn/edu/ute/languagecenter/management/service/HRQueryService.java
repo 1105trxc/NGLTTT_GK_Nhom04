@@ -7,6 +7,8 @@ import vn.edu.ute.languagecenter.management.repo.jpa.JpaUserAccountRepository;
 import vn.edu.ute.languagecenter.management.repo.jpa.JpaNotificationRepository;
 import vn.edu.ute.languagecenter.management.model.*;
 
+import vn.edu.ute.languagecenter.management.repo.jpa.JpaEnrollmentRepository;
+
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.*;
@@ -201,6 +203,49 @@ public class HRQueryService {
                 // Bước 3: Giới hạn tối đa 5 kết quả đầu tiên
                 .limit(5)
                 // Bước 4: Thu thập thành List
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lấy các thông báo dành riêng cho Student có lọc theo lớp học:
+     * - Thông báo "All" hoặc "Student" không gắn lớp cụ thể: hiển thị cho tất cả
+     * student.
+     * - Thông báo có tiêu đề bắt đầu bằng [ClassName]: chỉ hiển thị nếu student
+     * thuộc lớp đó.
+     */
+    public List<Notification> getRecentNotificationsForStudent(Student student) {
+        List<Notification> allNotifs = notiDAO.findRecent(50);
+        JpaEnrollmentRepository enrollRepo = new JpaEnrollmentRepository();
+
+        // Lấy danh sách tên lớp mà student đang học
+        Set<String> myClassNames = enrollRepo.findByStudent(student).stream()
+                .map(e -> e.getClass_() != null ? e.getClass_().getClassName() : null)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        return allNotifs.stream()
+                .filter(n -> {
+                    // chỉ lấy thông báo target Student hoặc All
+                    boolean roleMatch = n.getTargetRole() == Notification.TargetRole.Student
+                            || n.getTargetRole() == Notification.TargetRole.All;
+                    if (!roleMatch)
+                        return false;
+
+                    String title = n.getTitle();
+                    if (title != null && title.startsWith("[")) {
+                        // có prefix [ClassName] - trích xuất tên lớp
+                        int end = title.indexOf(']');
+                        if (end > 1) {
+                            String className = title.substring(1, end);
+                            // chỉ hiển thị nếu student thuộc lớp này
+                            return myClassNames.contains(className);
+                        }
+                    }
+                    // không có prefix lớp -> hiển thị cho mọi student
+                    return true;
+                })
+                .sorted(Comparator.comparing(Notification::getCreatedAt).reversed())
+                .limit(5)
                 .collect(Collectors.toList());
     }
 }

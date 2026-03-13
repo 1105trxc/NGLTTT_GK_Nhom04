@@ -3,14 +3,16 @@ package vn.edu.ute.languagecenter.management.ui;
 import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Room;
 import vn.edu.ute.languagecenter.management.model.Schedule;
+import vn.edu.ute.languagecenter.management.model.UserAccount;
+import vn.edu.ute.languagecenter.management.model.Enrollment;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.RoomService;
 import vn.edu.ute.languagecenter.management.service.ScheduleService;
+import vn.edu.ute.languagecenter.management.service.EnrollmentService;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.ClassSelectionDialog;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.RoomSelectionDialog;
 
 import com.toedter.calendar.JDateChooser;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -18,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SchedulePanel extends JPanel {
 
@@ -30,26 +33,28 @@ public class SchedulePanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
 
-    // Nút chọn Lớp học
+    // Giao diện chọn Lớp
     private Class_ selectedClass = null;
     private JTextField txtClassName;
     private JButton btnSelectClass;
 
-    // Nút chọn Phòng học
+    // Giao diện chọn Phòng
     private Room selectedRoom = null;
     private JTextField txtRoomName;
     private JButton btnSelectRoom;
 
+    // Thời gian
     private JDateChooser dcDate;
-    private JSpinner spnStartTime, spnEndTime; // Đã thay bằng Spinner
+    private JSpinner spnStartTime, spnEndTime;
 
+    // Buttons & User Info
     private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnLoadByClass;
-    private Long teacherId;
+    private UserAccount currentUser;
 
     private static final DateTimeFormatter TF = DateTimeFormatter.ofPattern("HH:mm");
 
-    public SchedulePanel(Long teacherId) {
-        this.teacherId = teacherId;
+    public SchedulePanel(UserAccount currentUser) {
+        this.currentUser = currentUser;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
@@ -101,7 +106,7 @@ public class SchedulePanel extends JPanel {
         gbc.gridx = 3;
         formPanel.add(pnlRoomSelect, gbc);
 
-        // 3. THÔNG TIN NGÀY VÀ GIỜ (DÙNG SPINNER)
+        // 3. NGÀY VÀ GIỜ (DÙNG SPINNER)
         gbc.gridx = 0;
         gbc.gridy = 1;
         formPanel.add(new JLabel("Ngày học:"), gbc);
@@ -145,10 +150,23 @@ public class SchedulePanel extends JPanel {
         gbc.insets = new Insets(10, 5, 5, 5);
         formPanel.add(btnPanel, gbc);
 
+        // KHÓA FORM NẾU LÀ STUDENT
+        if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student) {
+            btnAdd.setVisible(false);
+            btnUpdate.setVisible(false);
+            btnDelete.setVisible(false);
+            btnClear.setVisible(false);
+            dcDate.setEnabled(false);
+            spnStartTime.setEnabled(false);
+            spnEndTime.setEnabled(false);
+            btnSelectRoom.setEnabled(false);
+            // Vẫn để btnSelectClass để học viên có thể lọc lịch theo lớp của họ
+        }
+
         add(formPanel, BorderLayout.NORTH);
 
-        // --- BẢNG DỮ LIỆU ---
-        String[] cols = {"ID", "Lớp", "Ngày học", "Bắt đầu", "Kết thúc", "Phòng"};
+        // --- TABLE DỮ LIỆU ---
+        String[] cols = { "ID", "Lớp", "Ngày học", "Bắt đầu", "Kết thúc", "Phòng" };
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -174,7 +192,8 @@ public class SchedulePanel extends JPanel {
         table.setSelectionBackground(new Color(173, 216, 230));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) fillForm();
+            if (!e.getValueIsAdjusting())
+                fillForm();
         });
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -205,7 +224,21 @@ public class SchedulePanel extends JPanel {
 
     private void openClassDialog() {
         try {
-            List<Class_> classes = teacherId != null ? classService.findByTeacherId(teacherId) : classService.findAll();
+            List<Class_> classes;
+            // Phân quyền danh sách lớp hiển thị
+            if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Teacher
+                    && currentUser.getTeacher() != null) {
+                classes = classService.findByTeacherId(currentUser.getTeacher().getTeacherId());
+            } else if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student
+                    && currentUser.getStudent() != null) {
+                EnrollmentService es = new EnrollmentService();
+                classes = es.findByStudent(currentUser.getStudent()).stream()
+                        .map(Enrollment::getClass_)
+                        .collect(Collectors.toList());
+            } else {
+                classes = classService.findAll();
+            }
+
             Window parentWindow = SwingUtilities.getWindowAncestor(this);
             ClassSelectionDialog dialog = new ClassSelectionDialog(parentWindow, classes);
             dialog.setVisible(true);
@@ -239,8 +272,28 @@ public class SchedulePanel extends JPanel {
 
     public void refreshData() {
         try {
-            loadTable(scheduleService.findAll());
-            clearForm();
+            if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student
+                    && currentUser.getStudent() != null) {
+                EnrollmentService es = new EnrollmentService();
+                List<Long> classIds = es.findByStudent(currentUser.getStudent()).stream()
+                        .map(e -> e.getClass_().getClassId())
+                        .collect(Collectors.toList());
+                List<Schedule> list = scheduleService.findAll().stream()
+                        .filter(s -> s.getClass_() != null && classIds.contains(s.getClass_().getClassId()))
+                        .collect(Collectors.toList());
+                loadTable(list);
+            } else if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Teacher
+                    && currentUser.getTeacher() != null) {
+                List<Long> classIds = classService.findByTeacherId(currentUser.getTeacher().getTeacherId()).stream()
+                        .map(Class_::getClassId)
+                        .collect(Collectors.toList());
+                List<Schedule> list = scheduleService.findAll().stream()
+                        .filter(s -> s.getClass_() != null && classIds.contains(s.getClass_().getClassId()))
+                        .collect(Collectors.toList());
+                loadTable(list);
+            } else {
+                loadTable(scheduleService.findAll());
+            }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
         }
@@ -249,7 +302,7 @@ public class SchedulePanel extends JPanel {
     private void loadTable(List<Schedule> list) {
         tableModel.setRowCount(0);
         for (Schedule s : list) {
-            tableModel.addRow(new Object[]{
+            tableModel.addRow(new Object[] {
                     s.getScheduleId(),
                     s.getClass_() != null ? s.getClass_().getClassName() : "",
                     s.getStudyDate(),
@@ -350,8 +403,10 @@ public class SchedulePanel extends JPanel {
             Long id = (Long) tableModel.getValueAt(row, 0);
             Schedule s = scheduleService.findById(id).orElseThrow(() -> new Exception("Không tìm thấy lịch học trong CSDL"));
 
-            if (teacherId != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
-                    || !s.getClass_().getTeacher().getTeacherId().equals(teacherId))) {
+            if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Teacher
+                    && currentUser.getTeacher() != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
+                    || !s.getClass_().getTeacher().getTeacherId()
+                    .equals(currentUser.getTeacher().getTeacherId()))) {
                 JOptionPane.showMessageDialog(this, "Bạn chỉ được cập nhật lịch của lớp do mình phụ trách.",
                         "Lỗi phân quyền", JOptionPane.WARNING_MESSAGE);
                 return;
@@ -388,8 +443,10 @@ public class SchedulePanel extends JPanel {
             Long id = (Long) tableModel.getValueAt(row, 0);
             Schedule s = scheduleService.findById(id).orElseThrow(() -> new Exception("Không tìm thấy lịch học"));
 
-            if (teacherId != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
-                    || !s.getClass_().getTeacher().getTeacherId().equals(teacherId))) {
+            if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Teacher
+                    && currentUser.getTeacher() != null && (s.getClass_() == null || s.getClass_().getTeacher() == null
+                    || !s.getClass_().getTeacher().getTeacherId()
+                    .equals(currentUser.getTeacher().getTeacherId()))) {
                 JOptionPane.showMessageDialog(this, "Bạn chỉ được xóa lịch của lớp do mình phụ trách.",
                         "Lỗi phân quyền", JOptionPane.WARNING_MESSAGE);
                 return;

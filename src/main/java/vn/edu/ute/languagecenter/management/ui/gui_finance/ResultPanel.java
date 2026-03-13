@@ -4,7 +4,7 @@ import vn.edu.ute.languagecenter.management.model.Class_;
 import vn.edu.ute.languagecenter.management.model.Enrollment;
 import vn.edu.ute.languagecenter.management.model.Result;
 import vn.edu.ute.languagecenter.management.model.Student;
-import vn.edu.ute.languagecenter.management.repo.jpa.JpaClassRepository;
+import vn.edu.ute.languagecenter.management.model.UserAccount;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.EnrollmentService;
 import vn.edu.ute.languagecenter.management.service.ResultService;
@@ -29,7 +29,7 @@ public class ResultPanel extends JPanel {
     private final EnrollmentService enrollmentService = new EnrollmentService();
     private final ClassService classService = new ClassService();
 
-    // Thay đổi: Dùng Dialog chọn lớp thay cho ComboBox
+    // ── Components ────────────────────────────────────────────────────────────
     private Class_ selectedClass = null;
     private JTextField txtClassName;
     private JButton btnSelectClass;
@@ -41,7 +41,8 @@ public class ResultPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextArea txaStats;
     private TableModelListener gradeAutoCalcListener;
-    private Long currentTeacherId;
+
+    private final UserAccount currentUser;
 
     private static final int COL_ID = 0;
     private static final int COL_NAME = 1;
@@ -49,14 +50,19 @@ public class ResultPanel extends JPanel {
     private static final int COL_GRADE = 3;
     private static final int COL_COMMENT = 4;
 
-    public ResultPanel(Long teacherId) {
-        this.currentTeacherId = teacherId;
+    public ResultPanel(UserAccount currentUser) {
+        this.currentUser = currentUser;
         setLayout(new BorderLayout(10, 10));
         setBorder(new EmptyBorder(12, 12, 12, 12));
         setBackground(Color.WHITE);
+
         add(buildTopPanel(), BorderLayout.NORTH);
         add(buildTablePanel(), BorderLayout.CENTER);
-        add(buildStatsPanel(), BorderLayout.EAST);
+
+        // Chỉ hiển thị Thống Kê cho Admin, Staff, Teacher - không hiển thị cho Student
+        if (currentUser == null || currentUser.getRole() != UserAccount.UserRole.Student) {
+            add(buildStatsPanel(), BorderLayout.EAST);
+        }
     }
 
     private JPanel buildTopPanel() {
@@ -100,10 +106,18 @@ public class ResultPanel extends JPanel {
         btnSaveAll = makeButton("💾 Lưu Tất Cả Điểm", new Color(46, 139, 87));
         btnExportStats = makeButton("📊 Xem Thống Kê", new Color(106, 90, 205));
         JButton btnRefresh = makeButton("🔄 Làm Mới", new Color(128, 128, 128));
+
         btnPanel.add(btnLoad);
         btnPanel.add(btnSaveAll);
         btnPanel.add(btnExportStats);
         btnPanel.add(btnRefresh);
+
+        // Ẩn nút lưu và xem thống kê nếu là sinh viên
+        if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student) {
+            btnSaveAll.setVisible(false);
+            btnExportStats.setVisible(false);
+        }
+
         g.gridx = 0;
         g.gridy = 1;
         g.gridwidth = 3;
@@ -114,9 +128,13 @@ public class ResultPanel extends JPanel {
         btnSelectClass.addActionListener(e -> {
             try {
                 List<Class_> classes;
-                // Nếu có ID giáo viên, lọc lớp theo giáo viên đó, nếu không thì lấy tất cả
-                if (currentTeacherId != null) {
-                    classes = classService.findByTeacherId(currentTeacherId);
+                // Lọc lớp theo Role
+                if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Teacher && currentUser.getTeacher() != null) {
+                    classes = classService.findByTeacherId(currentUser.getTeacher().getTeacherId());
+                } else if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student && currentUser.getStudent() != null) {
+                    classes = enrollmentService.findByStudent(currentUser.getStudent()).stream()
+                            .map(Enrollment::getClass_)
+                            .collect(Collectors.toList());
                 } else {
                     classes = classService.findAll();
                 }
@@ -132,7 +150,7 @@ public class ResultPanel extends JPanel {
 
                     // Tự động load danh sách học viên và reset thống kê khi chọn lớp mới
                     loadResultTable();
-                    txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
+                    if (txaStats != null) txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Lỗi tải lớp học: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -143,11 +161,10 @@ public class ResultPanel extends JPanel {
         btnSaveAll.addActionListener(e -> saveAllResults());
         btnExportStats.addActionListener(e -> refreshStats());
         btnRefresh.addActionListener(e -> {
-            // Xóa rỗng form
             selectedClass = null;
             txtClassName.setText("Chưa chọn lớp học...");
             tableModel.setRowCount(0);
-            txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
+            if (txaStats != null) txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
         });
 
         return pnl;
@@ -161,6 +178,10 @@ public class ResultPanel extends JPanel {
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
+                // Khóa không cho sinh viên sửa điểm
+                if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student) {
+                    return false;
+                }
                 return c == COL_SCORE || c == COL_COMMENT;
             }
         };
@@ -215,7 +236,7 @@ public class ResultPanel extends JPanel {
                     }
                 });
 
-        // Listener tự tính grade khi nhập điểm — dùng flag chống vòng lặp
+        // Listener tự tính grade khi nhập điểm
         gradeAutoCalcListener = new TableModelListener() {
             private boolean updating = false;
 
@@ -279,6 +300,14 @@ public class ResultPanel extends JPanel {
                     .filter(e -> e.getStatus() == Enrollment.EnrollmentStatus.Enrolled
                             || e.getStatus() == Enrollment.EnrollmentStatus.Completed)
                     .map(Enrollment::getStudent)
+                    .filter(s -> {
+                        // BỘ LỌC SINH VIÊN CHỈ ĐƯỢC XEM ĐIỂM CỦA MÌNH
+                        if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student
+                                && currentUser.getStudent() != null) {
+                            return s.getStudentId().equals(currentUser.getStudent().getStudentId());
+                        }
+                        return true;
+                    })
                     .sorted(Comparator.comparing(Student::getFullName))
                     .collect(Collectors.toList());
 
@@ -314,7 +343,7 @@ public class ResultPanel extends JPanel {
         Map<Student, BigDecimal> scores = new LinkedHashMap<>();
         Map<Student, String> comments = new LinkedHashMap<>();
 
-        // Lấy danh sách Student THẬT từ database để map vào điểm số (Tránh lỗi Hibernate transient/detached)
+        // Lấy danh sách Student THẬT từ database để map vào điểm số
         Map<Long, Student> realStudentsMap = enrollmentService.findByClass(cls).stream()
                 .map(Enrollment::getStudent)
                 .collect(Collectors.toMap(Student::getStudentId, s -> s));
@@ -347,7 +376,7 @@ public class ResultPanel extends JPanel {
                     "Đã lưu điểm cho " + saved.size() + " học viên.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             loadResultTable();
-            refreshStats();
+            if (txaStats != null) refreshStats();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this,
                     "Lỗi lưu điểm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -356,7 +385,7 @@ public class ResultPanel extends JPanel {
 
     private void refreshStats() {
         Class_ cls = selectedClass;
-        if (cls == null)
+        if (cls == null || txaStats == null)
             return;
         try {
             Map<String, Long> gradeCount = resultService.countByGrade(cls);
@@ -391,16 +420,5 @@ public class ResultPanel extends JPanel {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
         return btn;
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame f = new JFrame("Preview – ResultPanel");
-            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setSize(900, 600);
-            f.add(new ResultPanel(2L)); // Truyền ID giáo viên để test
-            f.setLocationRelativeTo(null);
-            f.setVisible(true);
-        });
     }
 }

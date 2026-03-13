@@ -34,6 +34,7 @@ public class AttendancePanel extends JPanel {
     private JSpinner spnDate;
     private JButton btnLoad;
     private JButton btnSave;
+    private JButton btnExport; // Nút xuất Excel mới thêm
     private JLabel lblSummary;
     private JTable tblAttendance;
     private DefaultTableModel tableModel;
@@ -111,12 +112,17 @@ public class AttendancePanel extends JPanel {
         g.gridx = 6;
         pnl.add(btnRefresh, g);
 
+        // --- NÚT XUẤT EXCEL ---
+        btnExport = makeButton("📗 Xuất Excel", new Color(33, 115, 70));
+        g.gridx = 7;
+        pnl.add(btnExport, g);
+
         lblSummary = new JLabel("Có mặt: --  Vắng: --  Trễ: --");
         lblSummary.setFont(new Font("Arial", Font.BOLD, 12));
         lblSummary.setForeground(new Color(25, 25, 112));
         g.gridx = 0;
         g.gridy = 1;
-        g.gridwidth = 7;
+        g.gridwidth = 8; // Đã cập nhật width để bao trọn cả nút Excel
         g.weightx = 1;
         pnl.add(lblSummary, g);
 
@@ -156,6 +162,23 @@ public class AttendancePanel extends JPanel {
             txtClassName.setText("Chưa chọn lớp học...");
             tableModel.setRowCount(0);
             updateSummary();
+        });
+
+        // --- SỰ KIỆN XUẤT EXCEL ---
+        btnExport.addActionListener(e -> {
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Lấy tên lớp để đặt tên file mặc định
+            String defaultFileName = "DiemDanh_" +
+                    (selectedClass != null ? selectedClass.getClassName().replaceAll("[^a-zA-Z0-9]", "_") : "Lop") +
+                    "_" + getSelectedDate().toString();
+
+            vn.edu.ute.languagecenter.management.util.ExcelExporter.exportJTableToExcel(
+                    tblAttendance, defaultFileName, "Điểm Danh"
+            );
         });
 
         return pnl;

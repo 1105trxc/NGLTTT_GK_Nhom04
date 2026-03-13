@@ -7,7 +7,7 @@ import vn.edu.ute.languagecenter.management.model.Teacher;
 import vn.edu.ute.languagecenter.management.service.ClassService;
 import vn.edu.ute.languagecenter.management.service.CourseService;
 import vn.edu.ute.languagecenter.management.service.RoomService;
-import vn.edu.ute.languagecenter.management.service.TeacherService; // <-- Đảm bảo có class này
+import vn.edu.ute.languagecenter.management.service.TeacherService;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.CourseSelectionDialog;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.RoomSelectionDialog;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.TeacherSelectionDialog;
@@ -19,6 +19,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ClassPanel extends JPanel {
 
@@ -217,6 +218,19 @@ public class ClassPanel extends JPanel {
         btnSearchAction = makeButton("🔍 Tìm", new Color(70, 130, 180));
         searchPanel.add(btnSearchAction);
 
+        // --- TÍCH HỢP LIVE SEARCH ---
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { doLiveSearch(); }
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { doLiveSearch(); }
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { doLiveSearch(); }
+            private void doLiveSearch() {
+                SwingUtilities.invokeLater(() -> searchClass());
+            }
+        });
+
         JPanel centerPanel = new JPanel(new BorderLayout(0, 6));
         centerPanel.setOpaque(false);
         centerPanel.add(searchPanel, BorderLayout.NORTH);
@@ -268,13 +282,11 @@ public class ClassPanel extends JPanel {
             TeacherSelectionDialog dialog = new TeacherSelectionDialog(owner, list);
             dialog.setVisible(true);
 
-            // Xử lý lấy đối tượng ra
             if (!dialog.isVisible()) {
                 selectedTeacher = dialog.getSelectedTeacher();
                 if (selectedTeacher != null) {
                     txtTeacherName.setText(selectedTeacher.getFullName());
                 } else {
-                    // Xóa trống
                     txtTeacherName.setText("Chưa chọn giáo viên...");
                 }
             }
@@ -459,12 +471,35 @@ public class ClassPanel extends JPanel {
         }
     }
 
+    // --- ĐÃ FIX: Lọc tìm kiếm tuân thủ Phân Quyền (TeacherID) ---
     private void searchClass() {
-        String kw = txtSearch.getText().trim();
+        String kw = txtSearch.getText().trim().toLowerCase();
         try {
-            loadTable(kw.isEmpty() ? classService.findAll() : classService.findByName(kw));
+            // Bước 1: Lấy danh sách Lớp học theo phân quyền (Giáo viên chỉ lấy lớp của họ, Admin lấy hết)
+            List<Class_> baseList;
+            if (teacherId != null) {
+                baseList = classService.findByTeacherId(teacherId);
+            } else {
+                baseList = classService.findAll();
+            }
+
+            // Bước 2: Nếu không có từ khóa thì load lại danh sách cơ sở
+            if (kw.isEmpty()) {
+                loadTable(baseList);
+                return;
+            }
+
+            // Bước 3: Dùng Stream lọc danh sách cơ sở theo từ khóa nhập vào (Tên lớp, Tên khóa học, Tên phòng)
+            List<Class_> filteredList = baseList.stream()
+                    .filter(c -> (c.getClassName() != null && c.getClassName().toLowerCase().contains(kw)) ||
+                            (c.getCourse() != null && c.getCourse().getCourseName().toLowerCase().contains(kw)) ||
+                            (c.getRoom() != null && c.getRoom().getRoomName().toLowerCase().contains(kw)))
+                    .collect(Collectors.toList());
+
+            loadTable(filteredList);
+
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi tìm kiếm: " + e.getMessage());
         }
     }
 

@@ -9,7 +9,7 @@
         <properties>
             <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
             <property name="jakarta.persistence.jdbc.url"
-                      value="jdbc:mysql://127.0.0.1:3306/mis_language_center?useSSL=false&amp;allowPu123blicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh"/>
+                      value="jdbc:mysql://127.0.0.1:3306/mis_language_center?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Ho_Chi_Minh"/>
             <property name="jakarta.persistence.jdbc.user" value="root"/>
             <property name="jakarta.persistence.jdbc.password" value="123456"/>
 

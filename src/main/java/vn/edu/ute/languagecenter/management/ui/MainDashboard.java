@@ -1,6 +1,7 @@
 package vn.edu.ute.languagecenter.management.ui;
 
 import vn.edu.ute.languagecenter.management.model.Notification;
+import vn.edu.ute.languagecenter.management.model.Staff;
 import vn.edu.ute.languagecenter.management.model.UserAccount;
 import vn.edu.ute.languagecenter.management.service.HRQueryService;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.AttendancePanel;
@@ -72,8 +73,8 @@ public class MainDashboard extends JFrame {
     private void initUI() {
         setTitle("Quản Lý Trung Tâm Ngoại Ngữ");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1180, 750);
-        setMinimumSize(new Dimension(950, 580));
+        setSize(1300, 780);
+        setMinimumSize(new Dimension(1000, 620));
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -168,7 +169,19 @@ public class MainDashboard extends JFrame {
         JLabel nameL = new JLabel(currentUser.getUsername());
         nameL.setFont(new Font("Segoe UI", Font.BOLD, 12));
         nameL.setForeground(Color.WHITE);
-        JLabel roleL = new JLabel(currentUser.getRole().name());
+
+        // Với Staff: hiển thị "Staff – Consultant" thay vì chỉ "Staff"
+        String roleDisplay = currentUser.getRole().name();
+        if (currentUser.getRole() == UserAccount.UserRole.Staff && currentUser.getStaff() != null) {
+            try {
+                Staff.StaffRole sr = currentUser.getStaff().getRole();
+                if (sr != null && sr != Staff.StaffRole.Other && sr != Staff.StaffRole.Admin) {
+                    roleDisplay = "Staff – " + sr.name();
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        JLabel roleL = new JLabel(roleDisplay);
         roleL.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         roleL.setForeground(C_TEXT_MUTED);
         nameBox.add(nameL);
@@ -176,13 +189,12 @@ public class MainDashboard extends JFrame {
         userInfo.add(nameBox);
         right.add(userInfo);
 
-        // Separator
+        // Separator + nút logout
         JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
         sep.setForeground(new Color(50, 65, 90));
         sep.setPreferredSize(new Dimension(1, 30));
         right.add(sep);
 
-        // Nút logout
         JButton btnOut = new JButton("Đăng xuất") {
             @Override
             protected void paintComponent(Graphics g) {
@@ -250,53 +262,122 @@ public class MainDashboard extends JFrame {
 
         UserAccount.UserRole role = currentUser.getRole();
 
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
-                || role == UserAccount.UserRole.Teacher) {
+        // Bell button in header xử lý gửi thông báo – không thêm mục sidebar nữa
+
+        // ═══════════════════════════════════════════════════════════════
+        // PHÂN QUYỀN MENU THEO TÀI LIỆU YÊU CẦU:
+        // Admin - Toàn quyền tất cả chức năng
+        // Staff - Học vụ + Dịch vụ & Tài chính + Nhân sự (trừ Tài khoản)
+        // Teacher - Chỉ xem Lớp của mình, Điểm danh, Nhập điểm
+        // Student - KHÔNG đăng nhập phần mềm nội bộ
+        // ═══════════════════════════════════════════════════════════════
+
+        // ── STAFF – phân quyền theo từng StaffRole ─────────────────────
+        if (role == UserAccount.UserRole.Staff) {
+            Staff.StaffRole staffRole = Staff.StaffRole.Other;
+            try {
+                if (currentUser.getStaff() != null)
+                    staffRole = currentUser.getStaff().getRole();
+            } catch (Exception ignored) {
+            }
+
+            switch (staffRole) {
+                case Consultant -> {
+                    // ── Cố vấn: tư vấn + ghi danh + học viên ───────────────
+                    innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+                    addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+                    innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+                    addSidebarSection(innerMenu, "KếT QUẢ & ĐIỂM DANH");
+                    innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
+                }
+                case Accountant -> {
+                    // ── Kế toán: chỉ hóa đơn + chứng chỉ ────────────────────
+                    innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+                    addSidebarSection(innerMenu, "TÀI CHÍNH");
+                    innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
+                    addSidebarSection(innerMenu, "HỌC VỤ");
+                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+                }
+                case Manager -> {
+                    // ── Quản lý: điều phối toàn bộ ──────────────────
+                    innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+                    addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+                    innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(16, 185, 129)));
+                    addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
+                    innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
+                }
+                default -> {
+                    // Other hoặc Admin-Staff: fallback giống Staff cũ
+                    addSidebarSection(innerMenu, "HỌc VỤ & ĐÀO TẠO");
+                    innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+                    addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
+                    innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+                    innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
+                    addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
+                    innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+                    innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
+                }
+            }
+        }
+        // ── TEACHER ─────────────────────────────────────────────────────
+        if (role == UserAccount.UserRole.Teacher) {
             innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+            innerMenu.add(menuItem("  Lớp Của Tôi", CARD_CLASS, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Lịch Dạy", CARD_SCHEDULE, new Color(16, 185, 129)));
+            addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
+            innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
+            innerMenu.add(menuItem("  Nhập Điểm/KQ", CARD_RESULT, new Color(245, 158, 11)));
         }
 
-        // ── NGƯỜI 1: HỌC VỤ & ĐÀO TẠO ──────────────────────────────
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
-                || role == UserAccount.UserRole.Teacher) {
-            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
+        // ── STUDENT ─────────────────────────────────────────────────────
+        if (role == UserAccount.UserRole.Student) {
+            addSidebarSection(innerMenu, "HỌC TẬP");
+            innerMenu.add(menuItem("  Lịch Học Của Tôi", CARD_SCHEDULE, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Điểm Của Tôi", CARD_RESULT, new Color(245, 158, 11)));
         }
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
+
+        // ── ADMIN ─────────────────────────────────────────────────────
+        if (role == UserAccount.UserRole.Admin) {
+            innerMenu.add(menuItem("  Gửi Thông Báo", CARD_NOTIFICATION, new Color(139, 92, 246)));
+            addSidebarSection(innerMenu, "HỌC VỤ & ĐÀO TẠO");
             innerMenu.add(menuItem("  Khóa Học", CARD_COURSE, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Lớp Học", CARD_CLASS, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
-        } else if (role == UserAccount.UserRole.Teacher) {
-            innerMenu.add(menuItem("  Lớp Của Tôi", CARD_CLASS, new Color(16, 185, 129)));
-            innerMenu.add(menuItem("  Lịch Dạy", CARD_SCHEDULE, new Color(16, 185, 129)));
-        }
-
-        // ── NGƯỜI 3: DỊCH VỤ & TÀI CHÍNH ───────────────────────────
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff
-                || role == UserAccount.UserRole.Teacher) {
             addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
-        }
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
             innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Kết Quả Học Tập", CARD_RESULT, new Color(245, 158, 11)));
-        } else if (role == UserAccount.UserRole.Teacher) {
-            innerMenu.add(menuItem("  Điểm Danh", CARD_ATTENDANCE, new Color(245, 158, 11)));
-            innerMenu.add(menuItem("  Nhập Điểm/KQ", CARD_RESULT, new Color(245, 158, 11)));
-        }
-
-        // ── NGƯỜI 2: NHÂN SỰ & HỆ THỐNG ────────────────────────────
-        if (role == UserAccount.UserRole.Admin || role == UserAccount.UserRole.Staff) {
             addSidebarSection(innerMenu, "NHÂN SỰ & HỆ THỐNG");
             innerMenu.add(menuItem("  Học Viên", CARD_STUDENT, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
+            innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
-            if (role == UserAccount.UserRole.Admin) {
-                innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
-                innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
-            }
+            innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
+
         }
 
         innerMenu.add(Box.createVerticalGlue());
@@ -307,11 +388,9 @@ public class MainDashboard extends JFrame {
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
 
-        // --- FIX LỖI SCROLLBAR Ở ĐÂY ---
-        // Tắt khả năng hiển thị của Scrollbar nhưng vẫn giữ khả năng cuộn chuột
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        // Customize scrollbar if needed or leave it invisible
+        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
 
         sb.add(scroll);
 
@@ -385,13 +464,14 @@ public class MainDashboard extends JFrame {
                 teacherId = currentUser.getTeacher().getTeacherId();
             }
         } catch (Exception ex) {
+            // Catch lazy loading exceptions if any
             System.err.println("Cannot fetch teacher ID: " + ex.getMessage());
         }
 
         // HOME
         contentPanel.add(buildHomePanel(), CARD_HOME);
 
-        // THONG BAO
+        // THONG BAO - chỉ add card nếu không phải Student, Student xem ở Home
         if (currentUser.getRole() != UserAccount.UserRole.Student) {
             contentPanel.add(new NotificationPanel(currentUser), CARD_NOTIFICATION);
         }
@@ -407,14 +487,14 @@ public class MainDashboard extends JFrame {
         contentPanel.add(new CoursePanel(), CARD_COURSE);
         contentPanel.add(new ClassPanel(teacherId), CARD_CLASS);
         contentPanel.add(new RoomPanel(), CARD_ROOM);
-        contentPanel.add(new SchedulePanel(teacherId), CARD_SCHEDULE);
+        contentPanel.add(new SchedulePanel(currentUser), CARD_SCHEDULE);
         contentPanel.add(new PlacementTestPanel(), CARD_PLACEMENT);
         contentPanel.add(new CertificatePanel(), CARD_CERT);
 
         // DICH VU
         contentPanel.add(new EnrollmentPanel(), CARD_ENROLLMENT);
         contentPanel.add(new AttendancePanel(teacherId), CARD_ATTENDANCE);
-        contentPanel.add(new ResultPanel(teacherId), CARD_RESULT);
+        contentPanel.add(new ResultPanel(currentUser), CARD_RESULT);
         contentPanel.add(new InvoicePaymentPanel(), CARD_INVOICE);
 
         return contentPanel;
@@ -438,11 +518,11 @@ public class MainDashboard extends JFrame {
     // HOME / NOTIFICATION
     // =========================================================================
     private JPanel buildHomePanel() {
-        JPanel p = new JPanel(new BorderLayout(0, 16));
+        JPanel p = new JPanel(new BorderLayout(0, 12));
         p.setBackground(C_BG);
         p.setBorder(new EmptyBorder(28, 32, 28, 32));
 
-        // Greeting bar
+        // ── Greeting bar (NORTH) ─────────────────────────────────────
         JPanel greet = new JPanel(new BorderLayout());
         greet.setOpaque(false);
 
@@ -458,9 +538,14 @@ public class MainDashboard extends JFrame {
         greet.add(lbDate, BorderLayout.EAST);
         p.add(greet, BorderLayout.NORTH);
 
-        // Role badge
-        JPanel mid = new JPanel(new BorderLayout(0, 12));
+        // ── Tổng hợp phần giữa (CENTER - expandable) ───────────────────
+        JPanel mid = new JPanel(new BorderLayout(0, 10));
         mid.setOpaque(false);
+
+        // Role badge + section label (NORTH của mid)
+        JPanel topMeta = new JPanel();
+        topMeta.setLayout(new BoxLayout(topMeta, BoxLayout.Y_AXIS));
+        topMeta.setOpaque(false);
 
         JPanel badgeRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         badgeRow.setOpaque(false);
@@ -471,16 +556,27 @@ public class MainDashboard extends JFrame {
         badge.setOpaque(true);
         badge.setBorder(new EmptyBorder(3, 8, 3, 8));
         badgeRow.add(badge);
-        mid.add(badgeRow, BorderLayout.NORTH);
+        topMeta.add(badgeRow);
+        topMeta.add(Box.createVerticalStrut(10));
 
-        // Notification section
-        JLabel sec = new JLabel("Thông Báo Mới Nhất");
+        JLabel sec = new JLabel("📢  Thông Báo Mới Nhất");
         sec.setFont(new Font("Segoe UI", Font.BOLD, 15));
         sec.setForeground(new Color(15, 23, 42));
-        sec.setBorder(new EmptyBorder(8, 0, 8, 0));
-        mid.add(sec, BorderLayout.CENTER);
+        JPanel secRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        secRow.setOpaque(false);
+        secRow.add(sec);
+        topMeta.add(secRow);
+        topMeta.add(Box.createVerticalStrut(8));
+        mid.add(topMeta, BorderLayout.NORTH);
 
-        List<Notification> notifs = hrService.getRecentNotificationsForUser(currentUser.getRole());
+        // Load đúng danh sách thông báo theo role
+        List<Notification> notifs;
+        if (currentUser.getRole() == UserAccount.UserRole.Student && currentUser.getStudent() != null) {
+            notifs = hrService.getRecentNotificationsForStudent(currentUser.getStudent());
+        } else {
+            notifs = hrService.getRecentNotificationsForUser(currentUser.getRole());
+        }
+
         JPanel notifList = new JPanel();
         notifList.setLayout(new BoxLayout(notifList, BoxLayout.Y_AXIS));
         notifList.setOpaque(false);
@@ -503,49 +599,51 @@ public class MainDashboard extends JFrame {
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
+        mid.add(scroll, BorderLayout.CENTER); // → CENTER sẽ mở rộng đầy đủ chiều cao
 
-        // --- Ẩn Scrollbar màn hình chính ---
-        scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-        scroll.getVerticalScrollBar().setPreferredSize(new Dimension(0, 0));
-
-        mid.add(scroll, BorderLayout.SOUTH);
         p.add(mid, BorderLayout.CENTER);
         return p;
     }
 
     private JPanel buildNotifCard(Notification n, DateTimeFormatter fmt) {
-        JPanel card = new JPanel(new BorderLayout(0, 4)) {
+        JPanel card = new JPanel(new BorderLayout(0, 6)) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                         RenderingHints.VALUE_ANTIALIAS_ON);
                 g2.setColor(C_WHITE);
-                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10, 10));
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 12, 12));
                 // Accent bar trái
                 g2.setColor(C_ACCENT);
-                g2.fill(new RoundRectangle2D.Float(0, 0, 4, getHeight(), 4, 4));
+                g2.fillRect(0, 0, 4, getHeight());
                 g2.dispose();
             }
         };
         card.setOpaque(false);
-        card.setBorder(new EmptyBorder(12, 16, 12, 16));
-        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        card.setBorder(new EmptyBorder(12, 20, 12, 16));
+        // Không dùng setMaximumSize cứng nhắc – để card tự giãn theo nội dung
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
 
         JLabel title = new JLabel(n.getTitle());
         title.setFont(new Font("Segoe UI", Font.BOLD, 13));
         title.setForeground(new Color(15, 23, 42));
         card.add(title, BorderLayout.NORTH);
 
-        JLabel content = new JLabel("<html><body style='width:100%'>" + n.getContent() + "</body></html>");
-        content.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        content.setForeground(new Color(71, 85, 105));
+        // Nội dung: thay \n bằng <br> để HTML hiển đúng nhiều dòng
+        String htmlContent = "<html><body style='width:520px; font-family:Segoe UI; font-size:11pt; color:#475569;'>"
+                + (n.getContent() != null ? n.getContent().replace("\n", "<br>") : "")
+                + "</body></html>";
+        JLabel content = new JLabel(htmlContent);
+        content.setVerticalAlignment(SwingConstants.TOP);
         card.add(content, BorderLayout.CENTER);
 
+        // Meta dòng: target role + thời gian
         String time = n.getCreatedAt() != null ? n.getCreatedAt().format(fmt) : "";
-        JLabel meta = new JLabel(n.getTargetRole() + "  •  " + time);
+        JLabel meta = new JLabel(n.getTargetRole() + "   •   " + time);
         meta.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         meta.setForeground(new Color(148, 163, 184));
+        meta.setBorder(new EmptyBorder(4, 0, 0, 0));
         card.add(meta, BorderLayout.SOUTH);
 
         return card;
