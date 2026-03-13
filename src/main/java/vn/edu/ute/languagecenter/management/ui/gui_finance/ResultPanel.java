@@ -37,6 +37,7 @@ public class ResultPanel extends JPanel {
     private JButton btnLoad;
     private JButton btnSaveAll;
     private JButton btnExportStats;
+    private JButton btnExportExcel; // Nút xuất Excel mới
     private JTable tblResult;
     private DefaultTableModel tableModel;
     private JTextArea txaStats;
@@ -107,12 +108,16 @@ public class ResultPanel extends JPanel {
         btnExportStats = makeButton("📊 Xem Thống Kê", new Color(106, 90, 205));
         JButton btnRefresh = makeButton("🔄 Làm Mới", new Color(128, 128, 128));
 
+        // --- THÊM NÚT XUẤT EXCEL ---
+        btnExportExcel = makeButton("📗 Xuất Excel", new Color(33, 115, 70));
+
         btnPanel.add(btnLoad);
         btnPanel.add(btnSaveAll);
         btnPanel.add(btnExportStats);
         btnPanel.add(btnRefresh);
+        btnPanel.add(btnExportExcel); // Add nút vào panel
 
-        // Ẩn nút lưu và xem thống kê nếu là sinh viên
+        // Ẩn nút lưu và xem thống kê nếu là sinh viên (Sinh viên vẫn được quyền xuất file Excel xem điểm)
         if (currentUser != null && currentUser.getRole() == UserAccount.UserRole.Student) {
             btnSaveAll.setVisible(false);
             btnExportStats.setVisible(false);
@@ -165,6 +170,23 @@ public class ResultPanel extends JPanel {
             txtClassName.setText("Chưa chọn lớp học...");
             tableModel.setRowCount(0);
             if (txaStats != null) txaStats.setText("(Nhấn 'Xem Thống Kê'\nsau khi tải điểm)");
+        });
+
+        // --- SỰ KIỆN XUẤT EXCEL ---
+        btnExportExcel.addActionListener(e -> {
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String defaultFileName = "BangDiem";
+            if (selectedClass != null && selectedClass.getClassName() != null) {
+                defaultFileName += "_" + selectedClass.getClassName().replaceAll("[^a-zA-Z0-9]", "_");
+            }
+
+            vn.edu.ute.languagecenter.management.util.ExcelExporter.exportJTableToExcel(
+                    tblResult, defaultFileName, "Bảng Điểm"
+            );
         });
 
         return pnl;

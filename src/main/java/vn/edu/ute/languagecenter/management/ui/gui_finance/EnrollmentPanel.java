@@ -32,6 +32,7 @@ public class EnrollmentPanel extends JPanel {
     private JButton btnEnroll;
     private JButton btnDrop;
     private JButton btnRefresh;
+    private JButton btnExport;           // Nút xuất Excel
     private JLabel lblSiSo;
     private JTable tblEnrollment;
     private DefaultTableModel tableModel;
@@ -45,7 +46,6 @@ public class EnrollmentPanel extends JPanel {
         add(buildTopPanel(), BorderLayout.NORTH);
         add(buildCenterPanel(), BorderLayout.CENTER);
         add(buildBottomPanel(), BorderLayout.SOUTH);
-
     }
 
     private JPanel buildTopPanel() {
@@ -114,9 +114,15 @@ public class EnrollmentPanel extends JPanel {
         btnEnroll = makeButton("✅ Ghi Danh", new Color(46, 139, 87));
         btnDrop = makeButton("❌ Hủy Ghi Danh", new Color(178, 34, 34));
         btnRefresh = makeButton("🔄 Làm Mới", new Color(70, 130, 180));
+
+        // --- THÊM NÚT XUẤT EXCEL ---
+        btnExport = makeButton("📗 Xuất Excel", new Color(33, 115, 70));
+
         btnPanel.add(btnEnroll);
         btnPanel.add(btnDrop);
         btnPanel.add(btnRefresh);
+        btnPanel.add(btnExport); // Add nút vào panel
+
         g.gridx = 0;
         g.gridy = 1;
         g.gridwidth = 5;
@@ -131,13 +137,12 @@ public class EnrollmentPanel extends JPanel {
                 // Mở cửa sổ chọn (Dialog)
                 Window parentWindow = SwingUtilities.getWindowAncestor(this);
                 StudentSelectionDialog dialog = new StudentSelectionDialog(parentWindow, activeStudents);
-                dialog.setVisible(true); // Code sẽ dừng ở đây chờ người dùng đóng cửa sổ
+                dialog.setVisible(true);
 
                 // Lấy kết quả trả về
                 Student s = dialog.getSelectedStudent();
                 if (s != null) {
                     selectedStudent = s;
-                    // Hiển thị Tên - SĐT cho rõ ràng
                     txtStudentName.setText(s.getFullName() + " - " + (s.getPhone() != null ? s.getPhone() : ""));
                 }
             } catch (Exception ex) {
@@ -147,7 +152,6 @@ public class EnrollmentPanel extends JPanel {
 
         btnSelectClass.addActionListener(e -> {
             try {
-                // Lấy toàn bộ lớp từ DB (bạn có thể viết thêm hàm getActiveClasses bên ClassService để chỉ lấy lớp đang mở)
                 List<Class_> allClasses = classRepo.findAll();
 
                 Window parentWindow = SwingUtilities.getWindowAncestor(this);
@@ -159,7 +163,6 @@ public class EnrollmentPanel extends JPanel {
                     selectedClass = c;
                     txtClassName.setText(c.getClassName());
 
-                    // Khi chọn lớp xong thì cập nhật sĩ số và load danh sách học viên của lớp đó
                     updateSiSoLabel();
                     loadTable();
                 }
@@ -170,9 +173,27 @@ public class EnrollmentPanel extends JPanel {
 
         btnEnroll.addActionListener(e -> handleEnroll());
         btnDrop.addActionListener(e -> handleDrop());
-        btnRefresh.addActionListener(e -> {
-            loadTable();
+        btnRefresh.addActionListener(e -> loadTable());
+
+        // --- SỰ KIỆN XUẤT EXCEL ---
+        btnExport.addActionListener(e -> {
+            if (tableModel.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để xuất!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Đặt tên file thông minh (kèm tên lớp nếu có chọn)
+            String defaultFileName = "DanhSachGhiDanh";
+            if (selectedClass != null && selectedClass.getClassName() != null) {
+                defaultFileName += "_" + selectedClass.getClassName().replaceAll("[^a-zA-Z0-9]", "_");
+            }
+
+            // Gọi tiện ích xuất Excel
+            vn.edu.ute.languagecenter.management.util.ExcelExporter.exportJTableToExcel(
+                    tblEnrollment, defaultFileName, "Ghi Danh"
+            );
         });
+
         return pnl;
     }
 
@@ -224,10 +245,10 @@ public class EnrollmentPanel extends JPanel {
         tblEnrollment.getColumnModel().getColumn(0).setMaxWidth(0);
         pnl.add(new JScrollPane(tblEnrollment), BorderLayout.CENTER);
 
-        // Vẫn giữ lại sự kiện click nút Tìm kiếm (phòng hờ người dùng vẫn có thói quen click)
+        // Vẫn giữ lại sự kiện click nút Tìm kiếm
         btnSearch.addActionListener(e -> filterTable(txtSearch.getText().trim()));
 
-        // --- THÊM MỚI: Bắt sự kiện gõ phím (Live Search) ---
+        // Live Search
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
             @Override
             public void insertUpdate(javax.swing.event.DocumentEvent e) {
@@ -245,7 +266,6 @@ public class EnrollmentPanel extends JPanel {
             }
 
             private void doSearch() {
-                // Dùng SwingUtilities.invokeLater để đảm bảo UI không bị giật/lag khi gõ nhanh
                 SwingUtilities.invokeLater(() -> filterTable(txtSearch.getText().trim()));
             }
         });
@@ -263,8 +283,6 @@ public class EnrollmentPanel extends JPanel {
     }
 
     private void handleEnroll() {
-
-        // Dùng biến selectedStudent thay vì cboStudent
         if (selectedStudent == null || selectedClass == null) {
             JOptionPane.showMessageDialog(this,
                     "Vui lòng chọn Học viên và Lớp học.", "Thiếu thông tin",
@@ -272,13 +290,12 @@ public class EnrollmentPanel extends JPanel {
             return;
         }
         try {
-            enrollmentService.enroll(selectedStudent, selectedClass); // Truyền selectedStudent vào
+            enrollmentService.enroll(selectedStudent, selectedClass);
             JOptionPane.showMessageDialog(this,
                     "Ghi danh thành công!\nHọc viên: " + selectedStudent.getFullName()
                             + "\nLớp: " + selectedClass.getClassName(),
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
-            // Xóa rỗng form sau khi ghi danh xong cho tiện
             selectedStudent = null;
             txtStudentName.setText("Chưa chọn học viên...");
 
@@ -307,6 +324,7 @@ public class EnrollmentPanel extends JPanel {
             try {
                 enrollmentService.drop(id);
                 loadTable();
+                updateSiSoLabel();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this,
                         "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -404,16 +422,5 @@ public class EnrollmentPanel extends JPanel {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
         return btn;
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            JFrame f = new JFrame("Preview – EnrollmentPanel");
-            f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setSize(900, 600);
-            f.add(new EnrollmentPanel());
-            f.setLocationRelativeTo(null);
-            f.setVisible(true);
-        });
     }
 }
