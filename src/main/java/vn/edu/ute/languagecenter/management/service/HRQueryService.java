@@ -200,9 +200,7 @@ public class HRQueryService {
                         || n.getTargetRole() == finalRole)
                 // Bước 2: Sắp xếp theo thời gian tạo mới nhất trước
                 .sorted(Comparator.comparing(Notification::getCreatedAt).reversed())
-                // Bước 3: Giới hạn tối đa 5 kết quả đầu tiên
-                .limit(5)
-                // Bước 4: Thu thập thành List
+                // Bước 3: Thu thập thành List
                 .collect(Collectors.toList());
     }
 
@@ -245,7 +243,6 @@ public class HRQueryService {
                     return true;
                 })
                 .sorted(Comparator.comparing(Notification::getCreatedAt).reversed())
-                .limit(5)
                 .collect(Collectors.toList());
     }
 }

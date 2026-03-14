@@ -64,6 +64,15 @@ public class MainDashboard extends JFrame {
     private static final Color C_WHITE = Color.WHITE;
     private static final Color C_TEXT_MUTED = new Color(148, 163, 184);
 
+    // Pagination fields for notifications
+    private int notifCurrentPage = 1;
+    private final int notifItemsPerPage = 5;
+    private java.util.List<Notification> currentNotifs = new java.util.ArrayList<>();
+    private JPanel notifListPanel;
+    private JLabel lblNotifPage;
+    private JButton btnPrevNotif;
+    private JButton btnNextNotif;
+
     public MainDashboard(UserAccount user) {
         this.currentUser = user;
         initUI();
@@ -570,36 +579,65 @@ public class MainDashboard extends JFrame {
         mid.add(topMeta, BorderLayout.NORTH);
 
         // Load đúng danh sách thông báo theo role
-        List<Notification> notifs;
         if (currentUser.getRole() == UserAccount.UserRole.Student && currentUser.getStudent() != null) {
-            notifs = hrService.getRecentNotificationsForStudent(currentUser.getStudent());
+            currentNotifs = hrService.getRecentNotificationsForStudent(currentUser.getStudent());
         } else {
-            notifs = hrService.getRecentNotificationsForUser(currentUser.getRole());
+            currentNotifs = hrService.getRecentNotificationsForUser(currentUser.getRole());
         }
+        notifCurrentPage = 1;
 
-        JPanel notifList = new JPanel();
-        notifList.setLayout(new BoxLayout(notifList, BoxLayout.Y_AXIS));
-        notifList.setOpaque(false);
+        notifListPanel = new JPanel();
+        notifListPanel.setLayout(new BoxLayout(notifListPanel, BoxLayout.Y_AXIS));
+        notifListPanel.setOpaque(false);
 
-        if (notifs.isEmpty()) {
-            JLabel empty = new JLabel("Không có thông báo nào.");
-            empty.setFont(new Font("Segoe UI", Font.ITALIC, 13));
-            empty.setForeground(new Color(148, 163, 184));
-            notifList.add(empty);
-        } else {
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            for (Notification n : notifs) {
-                notifList.add(buildNotifCard(n, fmt));
-                notifList.add(Box.createVerticalStrut(10));
-            }
-        }
-
-        JScrollPane scroll = new JScrollPane(notifList);
+        JScrollPane scroll = new JScrollPane(notifListPanel);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
         mid.add(scroll, BorderLayout.CENTER); // → CENTER sẽ mở rộng đầy đủ chiều cao
+        
+        // Pagination controls (SOUTH of mid)
+        JPanel paginationPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        paginationPanel.setOpaque(false);
+        
+        btnPrevNotif = new JButton("◀ Trước");
+        btnNextNotif = new JButton("Sau ▶");
+        lblNotifPage = new JLabel("Trang 1/1");
+        
+        Font btnFont = new Font("Segoe UI", Font.PLAIN, 12);
+        btnPrevNotif.setFont(btnFont);
+        btnNextNotif.setFont(btnFont);
+        btnPrevNotif.setFocusPainted(false);
+        btnNextNotif.setFocusPainted(false);
+        btnPrevNotif.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnNextNotif.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        lblNotifPage.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        lblNotifPage.setForeground(new Color(100, 116, 139));
+        
+        btnPrevNotif.addActionListener(e -> {
+            if (notifCurrentPage > 1) {
+                notifCurrentPage--;
+                updateNotificationView();
+            }
+        });
+        
+        btnNextNotif.addActionListener(e -> {
+            int maxPage = (int) Math.ceil((double) currentNotifs.size() / notifItemsPerPage);
+            if (maxPage == 0) maxPage = 1;
+            if (notifCurrentPage < maxPage) {
+                notifCurrentPage++;
+                updateNotificationView();
+            }
+        });
+        
+        paginationPanel.add(btnPrevNotif);
+        paginationPanel.add(lblNotifPage);
+        paginationPanel.add(btnNextNotif);
+        
+        mid.add(paginationPanel, BorderLayout.SOUTH);
+
+        updateNotificationView();
 
         p.add(mid, BorderLayout.CENTER);
         return p;
@@ -647,6 +685,44 @@ public class MainDashboard extends JFrame {
         card.add(meta, BorderLayout.SOUTH);
 
         return card;
+    }
+
+    private void updateNotificationView() {
+        if (notifListPanel == null) return;
+        notifListPanel.removeAll();
+        
+        if (currentNotifs.isEmpty()) {
+            JLabel empty = new JLabel("Không có thông báo nào.");
+            empty.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+            empty.setForeground(new Color(148, 163, 184));
+            notifListPanel.add(empty);
+            
+            if(lblNotifPage != null) lblNotifPage.setText("Trang 1/1");
+            if(btnPrevNotif != null) btnPrevNotif.setEnabled(false);
+            if(btnNextNotif != null) btnNextNotif.setEnabled(false);
+        } else {
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+            
+            int maxPage = (int) Math.ceil((double) currentNotifs.size() / notifItemsPerPage);
+            if (maxPage == 0) maxPage = 1;
+            if (notifCurrentPage > maxPage) notifCurrentPage = maxPage;
+            if (notifCurrentPage < 1) notifCurrentPage = 1;
+            
+            int startIdx = (notifCurrentPage - 1) * notifItemsPerPage;
+            int endIdx = Math.min(startIdx + notifItemsPerPage, currentNotifs.size());
+            
+            for (int i = startIdx; i < endIdx; i++) {
+                notifListPanel.add(buildNotifCard(currentNotifs.get(i), fmt));
+                notifListPanel.add(Box.createVerticalStrut(10));
+            }
+            
+            if(lblNotifPage != null) lblNotifPage.setText("Trang " + notifCurrentPage + " / " + maxPage);
+            if(btnPrevNotif != null) btnPrevNotif.setEnabled(notifCurrentPage > 1);
+            if(btnNextNotif != null) btnNextNotif.setEnabled(notifCurrentPage < maxPage);
+        }
+        
+        notifListPanel.revalidate();
+        notifListPanel.repaint();
     }
 
 }
