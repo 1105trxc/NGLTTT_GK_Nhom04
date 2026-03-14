@@ -39,7 +39,7 @@ public class CertificatePanel extends JPanel {
 
     private JTextField txtCertName, txtSerialNo;
     private JDateChooser dcIssueDate;
-    private JButton btnAdd, btnDelete, btnClear, btnRefresh;
+    private JButton btnAdd, btnDelete, btnClear, btnRefresh, btnPrintPdf;
 
     public CertificatePanel() {
         setLayout(new BorderLayout(10, 10));
@@ -129,10 +129,12 @@ public class CertificatePanel extends JPanel {
         btnDelete = makeButton("❌ Xóa", new Color(178, 34, 34));
         btnClear = makeButton("🧹 Làm mới", new Color(70, 130, 180));
         btnRefresh = makeButton("🔄 Tải lại", new Color(245, 158, 11));
+        btnPrintPdf = makeButton("🖨️ In Chứng Chỉ", new Color(138, 43, 226));
         btnPanel.add(btnAdd);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
         btnPanel.add(btnRefresh);
+        btnPanel.add(btnPrintPdf);
 
         gbc.gridx = 0;
         gbc.gridy = 3;
@@ -197,6 +199,23 @@ public class CertificatePanel extends JPanel {
         btnDelete.addActionListener(e -> deleteCert());
         btnClear.addActionListener(e -> clearForm());
         btnRefresh.addActionListener(e -> refreshData());
+        btnPrintPdf.addActionListener(e -> printCertificateInfo());
+    }
+
+    private void printCertificateInfo() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn chứng chỉ trên bảng để in!", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        String studentName = String.valueOf(table.getValueAt(row, 1));
+        String className = String.valueOf(table.getValueAt(row, 2));
+        String certName = String.valueOf(table.getValueAt(row, 3));
+        String issueDate = String.valueOf(table.getValueAt(row, 4));
+        String serialNo = String.valueOf(table.getValueAt(row, 5));
+        
+        vn.edu.ute.languagecenter.management.util.PdfExporter.exportCertificatePdf(studentName, className, certName, issueDate, serialNo);
     }
 
     private void openStudentDialog() {

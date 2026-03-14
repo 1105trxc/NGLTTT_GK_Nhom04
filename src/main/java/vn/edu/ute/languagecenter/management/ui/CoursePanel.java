@@ -17,7 +17,7 @@ public class CoursePanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField txtName, txtDescription, txtDuration, txtFee, txtSearch;
     private JComboBox<String> cboLevel, cboDurationUnit, cboStatus;
-    private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch;
+    private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch, btnExportExcel;
 
     public CoursePanel() {
         setLayout(new BorderLayout(10, 10));
@@ -102,10 +102,12 @@ public class CoursePanel extends JPanel {
         btnUpdate = makeButton("✏️ Cập nhật", new Color(245, 158, 11));
         btnDelete = makeButton("❌ Xóa", new Color(178, 34, 34));
         btnClear = makeButton("🔄 Làm mới", new Color(70, 130, 180));
+        btnExportExcel = makeButton("🗂️ Xuất Excel", new Color(0, 100, 0));
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
+        btnPanel.add(btnExportExcel);
 
         // Đưa nút bấm vào Row 5 trong Form
         gbc.gridx = 0;
@@ -180,6 +182,11 @@ public class CoursePanel extends JPanel {
         btnDelete.addActionListener(e -> deleteCourse());
         btnClear.addActionListener(e -> clearForm());
         btnSearch.addActionListener(e -> searchCourse());
+        btnExportExcel.addActionListener(e -> exportToExcel());
+    }
+
+    private void exportToExcel() {
+        vn.edu.ute.languagecenter.management.util.ExcelExporter.exportJTableToExcel(table, "DanhSachKhoaHoc", "Khóa Học");
     }
 
     public void refreshData() {
