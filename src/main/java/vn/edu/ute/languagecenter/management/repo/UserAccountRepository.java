@@ -19,7 +19,7 @@ public interface UserAccountRepository {
 
     Optional<UserAccount> findByUsername(String username);
 
-    Optional<UserAccount> login(String username, String passwordHash);
+    Optional<UserAccount> login(String username, String password);
 
     List<UserAccount> findByRole(UserAccount.UserRole role);
 

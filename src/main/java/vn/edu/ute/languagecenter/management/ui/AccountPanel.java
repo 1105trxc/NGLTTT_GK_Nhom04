@@ -262,28 +262,51 @@ public class AccountPanel extends JPanel {
             return;
         cmbLinked.removeAllItems();
 
+        List<UserAccount> existingUsers = userService.findAllUsersWithLinks();
+        java.util.Set<Long> teacherIds = existingUsers.stream()
+                .filter(u -> u.getTeacher() != null)
+                .map(u -> u.getTeacher().getTeacherId())
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Set<Long> staffIds = existingUsers.stream()
+                .filter(u -> u.getStaff() != null)
+                .map(u -> u.getStaff().getStaffId())
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Set<Long> studentIds = existingUsers.stream()
+                .filter(u -> u.getStudent() != null)
+                .map(u -> u.getStudent().getStudentId())
+                .collect(java.util.stream.Collectors.toSet());
+
         if (role == UserAccount.UserRole.Teacher) {
             lblLinked.setText("Thuộc về Giáo Viên (*)");
-            if (teachers.isEmpty()) {
-                cmbLinked.addItem("— Chưa có giáo viên nào —");
+            List<Teacher> available = teachers.stream()
+                    .filter(t -> !teacherIds.contains(t.getTeacherId()))
+                    .toList();
+            if (available.isEmpty()) {
+                cmbLinked.addItem("— Tất cả giáo viên đã có tài khoản —");
             } else {
-                teachers.forEach(t -> cmbLinked.addItem(
+                available.forEach(t -> cmbLinked.addItem(
                         "[ID=" + t.getTeacherId() + "] " + t.getFullName()));
             }
         } else if (role == UserAccount.UserRole.Staff) {
             lblLinked.setText("Thuộc về Nhân Viên (*)");
-            if (staffList.isEmpty()) {
-                cmbLinked.addItem("— Chưa có nhân viên nào —");
+            List<Staff> available = staffList.stream()
+                    .filter(s -> !staffIds.contains(s.getStaffId()))
+                    .toList();
+            if (available.isEmpty()) {
+                cmbLinked.addItem("— Tất cả nhân viên đã có tài khoản —");
             } else {
-                staffList.forEach(s -> cmbLinked.addItem(
+                available.forEach(s -> cmbLinked.addItem(
                         "[ID=" + s.getStaffId() + "] " + s.getFullName()));
             }
         } else if (role == UserAccount.UserRole.Student) {
             lblLinked.setText("Thuộc về Học Viên (*)");
-            if (students.isEmpty()) {
-                cmbLinked.addItem("— Chưa có học viên nào —");
+            List<Student> available = students.stream()
+                    .filter(s -> !studentIds.contains(s.getStudentId()))
+                    .toList();
+            if (available.isEmpty()) {
+                cmbLinked.addItem("— Tất cả học viên đã có tài khoản —");
             } else {
-                students.forEach(s -> cmbLinked.addItem(
+                available.forEach(s -> cmbLinked.addItem(
                         "[ID=" + s.getStudentId() + "] " + s.getFullName()));
             }
         }

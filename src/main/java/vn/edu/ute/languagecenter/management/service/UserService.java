@@ -45,10 +45,22 @@ public class UserService {
         // Kiểm tra teacher tồn tại
         Teacher teacher = teacherDAO.findById(teacherId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giáo viên ID=" + teacherId));
+        
+        // Kiểm tra giáo viên này đã có tài khoản chưa
+        boolean alreadyHasAccount = findAllUsersWithLinks().stream()
+                .anyMatch(u -> u.getTeacher() != null && u.getTeacher().getTeacherId().equals(teacherId));
+        if (alreadyHasAccount) {
+            throw new IllegalArgumentException("Người dùng này đã có tài khoản");
+        }
+        
+        // Kiểm tra trùng username
+        if (userDAO.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trong hệ thống");
+        }
 
         UserAccount account = new UserAccount();
         account.setUsername(username);
-        account.setPasswordHash(password); // nên hash MD5/BCrypt trong production
+        account.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt()));
         account.setRole(UserAccount.UserRole.Teacher);
         account.setTeacher(teacher); // liên kết @OneToOne với Teacher
         account.setIsActive(true);
@@ -70,9 +82,21 @@ public class UserService {
         Staff staff = staffDAO.findById(staffId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nhân viên ID=" + staffId));
 
+        // Kiểm tra nhân viên này đã có tài khoản chưa
+        boolean alreadyHasAccount = findAllUsersWithLinks().stream()
+                .anyMatch(u -> u.getStaff() != null && u.getStaff().getStaffId().equals(staffId));
+        if (alreadyHasAccount) {
+            throw new IllegalArgumentException("Người dùng này đã có tài khoản");
+        }
+        
+        // Kiểm tra trùng username
+        if (userDAO.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trong hệ thống");
+        }
+
         UserAccount account = new UserAccount();
         account.setUsername(username);
-        account.setPasswordHash(password);
+        account.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt()));
         account.setRole(UserAccount.UserRole.Staff);
         account.setStaff(staff); // liên kết @OneToOne với Staff
         account.setIsActive(true);
@@ -94,9 +118,21 @@ public class UserService {
         Student student = studentDAO.findById(studentId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy học viên ID=" + studentId));
 
+        // Kiểm tra học viên này đã có tài khoản chưa
+        boolean alreadyHasAccount = findAllUsersWithLinks().stream()
+                .anyMatch(u -> u.getStudent() != null && u.getStudent().getStudentId().equals(studentId));
+        if (alreadyHasAccount) {
+            throw new IllegalArgumentException("Người dùng này đã có tài khoản");
+        }
+        
+        // Kiểm tra trùng username
+        if (userDAO.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trong hệ thống");
+        }
+
         UserAccount account = new UserAccount();
         account.setUsername(username);
-        account.setPasswordHash(password);
+        account.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt()));
         account.setRole(UserAccount.UserRole.Student);
         account.setStudent(student); // liên kết @OneToOne với Student
         account.setIsActive(true);
@@ -113,9 +149,14 @@ public class UserService {
      * @param password mật khẩu
      */
     public void createAdminAccount(String username, String password) {
+        // Kiểm tra trùng username
+        if (userDAO.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trong hệ thống");
+        }
+        
         UserAccount account = new UserAccount();
         account.setUsername(username);
-        account.setPasswordHash(password);
+        account.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt()));
         account.setRole(UserAccount.UserRole.Admin);
         account.setIsActive(true);
         account.setCreatedAt(LocalDateTime.now());
@@ -155,9 +196,14 @@ public class UserService {
      * Không bắt buộc liên kết với Teacher/Staff/Student.
      */
     public void createAccount(String username, String password, UserAccount.UserRole role) {
+        // Kiểm tra trùng username
+        if (userDAO.findByUsername(username).isPresent()) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trong hệ thống");
+        }
+        
         UserAccount account = new UserAccount();
         account.setUsername(username);
-        account.setPasswordHash(password);
+        account.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt()));
         account.setRole(role);
         account.setIsActive(true);
         account.setCreatedAt(LocalDateTime.now());
@@ -189,7 +235,7 @@ public class UserService {
     public void changePassword(Long userId, String newPassword) {
         UserAccount account = userDAO.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản ID=" + userId));
-        account.setPasswordHash(newPassword);
+        account.setPasswordHash(org.mindrot.jbcrypt.BCrypt.hashpw(newPassword, org.mindrot.jbcrypt.BCrypt.gensalt()));
         account.setUpdatedAt(LocalDateTime.now());
         userDAO.update(account);
     }

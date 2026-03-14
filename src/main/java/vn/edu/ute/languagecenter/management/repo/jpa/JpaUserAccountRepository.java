@@ -31,7 +31,7 @@ public class JpaUserAccountRepository extends GenericRepository<UserAccount>
     }
 
     @Override
-    public Optional<UserAccount> login(String username, String passwordHash) {
+    public Optional<UserAccount> login(String username, String password) {
         EntityManager em = getEntityManager();
         try {
             // Dùng LEFT JOIN FETCH để eager-load teacher/staff/student
@@ -41,13 +41,30 @@ public class JpaUserAccountRepository extends GenericRepository<UserAccount>
                     "LEFT JOIN FETCH u.staff " +
                     "LEFT JOIN FETCH u.student " +
                     "WHERE u.username = :username " +
-                    "  AND u.passwordHash = :pwd " +
                     "  AND u.isActive = true";
             TypedQuery<UserAccount> q = em.createQuery(hql, UserAccount.class);
             q.setParameter("username", username);
-            q.setParameter("pwd", passwordHash);
             List<UserAccount> list = q.getResultList();
-            return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
+            
+            if (list.isEmpty()) {
+                return Optional.empty();
+            }
+            
+            UserAccount u = list.get(0);
+            String dbHash = u.getPasswordHash();
+            
+            // Fallback cho tài khoản còn đang dùng mật khẩu plain text cũ
+            if (dbHash != null && (dbHash.startsWith("$2a$") || dbHash.startsWith("$2b$") || dbHash.startsWith("$2y$"))) {
+                if (org.mindrot.jbcrypt.BCrypt.checkpw(password, dbHash)) {
+                    return Optional.of(u);
+                }
+            } else {
+                if (password.equals(dbHash)) {
+                    return Optional.of(u);
+                }
+            }
+            
+            return Optional.empty();
         } finally {
             em.close();
         }
