@@ -33,19 +33,19 @@ public class Branch {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    // @Column(name = "updated_at", nullable = false)
+    // private LocalDateTime updatedAt;
 
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        // updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    public void preUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
+    // @PreUpdate
+    // public void preUpdate() {
+    // updatedAt = LocalDateTime.now();
+    // }
 
     // Relations
     @OneToMany(mappedBy = "branch", fetch = FetchType.LAZY)

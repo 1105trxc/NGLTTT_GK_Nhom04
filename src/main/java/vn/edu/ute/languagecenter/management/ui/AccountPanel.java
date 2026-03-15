@@ -40,7 +40,7 @@ public class AccountPanel extends JPanel {
     private List<Staff> staffList;
     private List<Student> students;
 
-    private JButton btnAdd, btnChangePwd, btnToggleLock, btnClear;
+    private JButton btnAdd, btnChangePwd, btnToggleLock, btnClear, btnDelete, btnEditUsername;
     private Long selectedAccountId = null;
 
     private static final Color COLOR_PRIMARY = new Color(30, 78, 128);
@@ -218,30 +218,38 @@ public class AccountPanel extends JPanel {
         panel.add(Box.createVerticalStrut(10));
 
         // Buttons
-        JPanel btnPnl = new JPanel(new GridLayout(2, 2, 6, 6));
+        JPanel btnPnl = new JPanel(new GridLayout(3, 2, 6, 6));
         btnPnl.setOpaque(false);
-        btnPnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+        btnPnl.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
         btnPnl.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         btnAdd = new JButton("➕ Tạo Tài Khoản");
         btnChangePwd = new JButton("🔑 Đổi Mật Khẩu");
+        btnEditUsername = new JButton("✏️ Sửa Username");
         btnToggleLock = new JButton("🔒 Khoá / Mở");
+        btnDelete = new JButton("🗑️ Xoá Tài Khoản");
         btnClear = new JButton("🔄 Xóa form");
 
         styleBtn(btnAdd, new Color(34, 139, 34));
         styleBtn(btnChangePwd, new Color(70, 130, 180));
+        styleBtn(btnEditUsername, new Color(255, 140, 0));
         styleBtn(btnToggleLock, new Color(185, 45, 45));
         styleBtn(btnClear, new Color(100, 110, 125));
+        styleBtn(btnDelete, new Color(220, 53, 69));
 
         btnPnl.add(btnAdd);
+        btnPnl.add(btnEditUsername);
         btnPnl.add(btnChangePwd);
         btnPnl.add(btnToggleLock);
+        btnPnl.add(btnDelete);
         btnPnl.add(btnClear);
         panel.add(btnPnl);
 
         btnAdd.addActionListener(e -> addAccount());
+        btnEditUsername.addActionListener(e -> editUsername());
         btnChangePwd.addActionListener(e -> changePassword());
         btnToggleLock.addActionListener(e -> toggleLock());
+        btnDelete.addActionListener(e -> deleteAccount());
         btnClear.addActionListener(e -> clearForm());
 
         updateLinkedPanel(); // init trạng thái ban đầu
@@ -262,51 +270,28 @@ public class AccountPanel extends JPanel {
             return;
         cmbLinked.removeAllItems();
 
-        List<UserAccount> existingUsers = userService.findAllUsersWithLinks();
-        java.util.Set<Long> teacherIds = existingUsers.stream()
-                .filter(u -> u.getTeacher() != null)
-                .map(u -> u.getTeacher().getTeacherId())
-                .collect(java.util.stream.Collectors.toSet());
-        java.util.Set<Long> staffIds = existingUsers.stream()
-                .filter(u -> u.getStaff() != null)
-                .map(u -> u.getStaff().getStaffId())
-                .collect(java.util.stream.Collectors.toSet());
-        java.util.Set<Long> studentIds = existingUsers.stream()
-                .filter(u -> u.getStudent() != null)
-                .map(u -> u.getStudent().getStudentId())
-                .collect(java.util.stream.Collectors.toSet());
-
         if (role == UserAccount.UserRole.Teacher) {
             lblLinked.setText("Thuộc về Giáo Viên (*)");
-            List<Teacher> available = teachers.stream()
-                    .filter(t -> !teacherIds.contains(t.getTeacherId()))
-                    .toList();
-            if (available.isEmpty()) {
-                cmbLinked.addItem("— Tất cả giáo viên đã có tài khoản —");
+            if (teachers.isEmpty()) {
+                cmbLinked.addItem("— Chưa có giáo viên nào trong hệ thống —");
             } else {
-                available.forEach(t -> cmbLinked.addItem(
+                teachers.forEach(t -> cmbLinked.addItem(
                         "[ID=" + t.getTeacherId() + "] " + t.getFullName()));
             }
         } else if (role == UserAccount.UserRole.Staff) {
             lblLinked.setText("Thuộc về Nhân Viên (*)");
-            List<Staff> available = staffList.stream()
-                    .filter(s -> !staffIds.contains(s.getStaffId()))
-                    .toList();
-            if (available.isEmpty()) {
-                cmbLinked.addItem("— Tất cả nhân viên đã có tài khoản —");
+            if (staffList.isEmpty()) {
+                cmbLinked.addItem("— Chưa có nhân viên nào trong hệ thống —");
             } else {
-                available.forEach(s -> cmbLinked.addItem(
+                staffList.forEach(s -> cmbLinked.addItem(
                         "[ID=" + s.getStaffId() + "] " + s.getFullName()));
             }
         } else if (role == UserAccount.UserRole.Student) {
             lblLinked.setText("Thuộc về Học Viên (*)");
-            List<Student> available = students.stream()
-                    .filter(s -> !studentIds.contains(s.getStudentId()))
-                    .toList();
-            if (available.isEmpty()) {
-                cmbLinked.addItem("— Tất cả học viên đã có tài khoản —");
+            if (students.isEmpty()) {
+                cmbLinked.addItem("— Chưa có học viên nào trong hệ thống —");
             } else {
-                available.forEach(s -> cmbLinked.addItem(
+                students.forEach(s -> cmbLinked.addItem(
                         "[ID=" + s.getStudentId() + "] " + s.getFullName()));
             }
         }
@@ -413,6 +398,33 @@ public class AccountPanel extends JPanel {
         }
     }
 
+    private void editUsername() {
+        if (selectedAccountId == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn tài khoản từ bảng!", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String newUsername = txtUsername.getText().trim();
+        if (newUsername.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập tên đăng nhập mới!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int ok = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn đổi tên đăng nhập thành \"" + newUsername + "\" không?",
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
+        if (ok != JOptionPane.YES_OPTION)
+            return;
+        try {
+            userService.changeUsername(selectedAccountId, newUsername);
+            JOptionPane.showMessageDialog(this, "✅ Đổi tên đăng nhập thành công!");
+            loadData();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void changePassword() {
         if (selectedAccountId == null) {
             JOptionPane.showMessageDialog(this,
@@ -456,6 +468,27 @@ public class AccountPanel extends JPanel {
                 userService.unlockAccount(selectedAccountId);
                 JOptionPane.showMessageDialog(this, "✅ Đã MỞ KHÓA tài khoản!");
             }
+            loadData();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void deleteAccount() {
+        if (selectedAccountId == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn tài khoản trong bảng!", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int ok = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc chắn muốn xóa tài khoản \"" + txtUsername.getText() + "\" không?\nHành động này không thể hoàn tác!",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (ok != JOptionPane.YES_OPTION)
+            return;
+        try {
+            userService.deleteAccount(selectedAccountId);
+            JOptionPane.showMessageDialog(this, "✅ Đã XÓA tài khoản!");
             loadData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "❌ Lỗi: " + ex.getMessage(),

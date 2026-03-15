@@ -239,4 +239,35 @@ public class UserService {
         account.setUpdatedAt(LocalDateTime.now());
         userDAO.update(account);
     }
+
+    /**
+     * Đổi tên đăng nhập tài khoản theo ID.
+     *
+     * @param userId      ID tài khoản
+     * @param newUsername tên đăng nhập mới
+     */
+    public void changeUsername(Long userId, String newUsername) {
+        // Kiểm tra xem đã có ai dùng tên này chưa
+        Optional<UserAccount> existing = userDAO.findByUsername(newUsername);
+        if (existing.isPresent() && !existing.get().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("Tên đăng nhập đã tồn tại trong hệ thống");
+        }
+
+        UserAccount account = userDAO.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản ID=" + userId));
+        account.setUsername(newUsername);
+        account.setUpdatedAt(LocalDateTime.now());
+        userDAO.update(account);
+    }
+
+    /**
+     * Xoá tài khoản theo ID.
+     *
+     * @param userId ID tài khoản cần xóa
+     */
+    public void deleteAccount(Long userId) {
+        userDAO.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản ID=" + userId));
+        userDAO.delete(userId);
+    }
 }
