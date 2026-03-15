@@ -72,6 +72,12 @@
             <artifactId>itextpdf</artifactId>
             <version>5.5.13.3</version>
         </dependency>
+        <!-- JFreeChart -->
+        <dependency>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.5.4</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -113,7 +119,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.2.0</version>
                 <configuration>
-                    <mainClass>vn.edu.ute.languagecenter.management.ui.TestMainFrame</mainClass>
+                    <mainClass>vn.edu.ute.languagecenter.management.App</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -47,7 +47,8 @@ public class MainDashboard extends JFrame {
     public static final String CARD_ROOM = "ROOM";
     public static final String CARD_SCHEDULE = "SCHEDULE";
     public static final String CARD_PLACEMENT = "PLACEMENT";
-    public static final String CARD_CERT = "CERTIFICATE";
+    public static final String CARD_CERTIFICATES = "CERTIFICATES";
+    public static final String CARD_STATISTICS = "STATISTICS";
 
     // Dịch vụ và tài chính
     public static final String CARD_ENROLLMENT = "ENROLLMENT";
@@ -72,6 +73,9 @@ public class MainDashboard extends JFrame {
     private JLabel lblNotifPage;
     private JButton btnPrevNotif;
     private JButton btnNextNotif;
+
+    private CertificatePanel certificatePanel;
+    private StatisticsPanel statisticsPanel;
 
     public MainDashboard(UserAccount user) {
         this.currentUser = user;
@@ -309,7 +313,7 @@ public class MainDashboard extends JFrame {
                     addSidebarSection(innerMenu, "TÀI CHÍNH");
                     innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
                     addSidebarSection(innerMenu, "HỌC VỤ");
-                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERTIFICATES, new Color(16, 185, 129)));
                 }
                 case Manager -> {
                     // ── Quản lý: điều phối toàn bộ ──────────────────
@@ -325,6 +329,8 @@ public class MainDashboard extends JFrame {
                     innerMenu.add(menuItem("  Giáo Viên", CARD_TEACHER, new Color(239, 68, 68)));
                     innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
                     innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
+                    addSidebarSection(innerMenu, "BÁO CÁO");
+                    innerMenu.add(menuItem("  Thống Kê", CARD_STATISTICS, new Color(245, 158, 11)));
                 }
                 default -> {
                     // Other hoặc Admin-Staff: fallback giống Staff cũ
@@ -334,7 +340,7 @@ public class MainDashboard extends JFrame {
                     innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
                     innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
                     innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
-                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+                    innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERTIFICATES, new Color(16, 185, 129)));
                     addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
                     innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
                     innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
@@ -374,7 +380,7 @@ public class MainDashboard extends JFrame {
             innerMenu.add(menuItem("  Phòng Học", CARD_ROOM, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Lịch Học", CARD_SCHEDULE, new Color(16, 185, 129)));
             innerMenu.add(menuItem("  Test Đầu Vào", CARD_PLACEMENT, new Color(16, 185, 129)));
-            innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERT, new Color(16, 185, 129)));
+            innerMenu.add(menuItem("  Chứng Chỉ", CARD_CERTIFICATES, new Color(16, 185, 129)));
             addSidebarSection(innerMenu, "DỊCH VỤ & TÀI CHÍNH");
             innerMenu.add(menuItem("  Ghi Danh", CARD_ENROLLMENT, new Color(245, 158, 11)));
             innerMenu.add(menuItem("  Hóa Đơn & TT", CARD_INVOICE, new Color(245, 158, 11)));
@@ -386,7 +392,8 @@ public class MainDashboard extends JFrame {
             innerMenu.add(menuItem("  Nhân Viên", CARD_STAFF, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Chi Nhánh", CARD_BRANCH, new Color(239, 68, 68)));
             innerMenu.add(menuItem("  Tài Khoản", CARD_ACCOUNT, new Color(239, 68, 68)));
-
+            addSidebarSection(innerMenu, "BÁO CÁO");
+            innerMenu.add(menuItem("  Thống Kê", CARD_STATISTICS, new Color(245, 158, 11)));
         }
 
         innerMenu.add(Box.createVerticalGlue());
@@ -498,13 +505,18 @@ public class MainDashboard extends JFrame {
         contentPanel.add(new RoomPanel(), CARD_ROOM);
         contentPanel.add(new SchedulePanel(currentUser), CARD_SCHEDULE);
         contentPanel.add(new PlacementTestPanel(), CARD_PLACEMENT);
-        contentPanel.add(new CertificatePanel(), CARD_CERT);
+        certificatePanel = new CertificatePanel();
+        contentPanel.add(certificatePanel, CARD_CERTIFICATES);
 
         // DICH VU
         contentPanel.add(new EnrollmentPanel(), CARD_ENROLLMENT);
         contentPanel.add(new AttendancePanel(teacherId), CARD_ATTENDANCE);
         contentPanel.add(new ResultPanel(currentUser), CARD_RESULT);
         contentPanel.add(new InvoicePaymentPanel(), CARD_INVOICE);
+
+        // BAO CAO
+        statisticsPanel = new StatisticsPanel();
+        contentPanel.add(statisticsPanel, CARD_STATISTICS);
 
         return contentPanel;
     }
@@ -517,6 +529,12 @@ public class MainDashboard extends JFrame {
                     java.lang.reflect.Method m = comp.getClass().getMethod("refreshData");
                     m.invoke(comp);
                 } catch (Exception ignored) {
+                }
+                // Handle specific panels that need refreshData
+                if (comp instanceof CertificatePanel && cardName.equals(CARD_CERTIFICATES)) {
+                    certificatePanel.refreshData();
+                } else if (comp instanceof StatisticsPanel && cardName.equals(CARD_STATISTICS)) {
+                    statisticsPanel.refreshData();
                 }
                 break;
             }
@@ -551,7 +569,7 @@ public class MainDashboard extends JFrame {
         JPanel mid = new JPanel(new BorderLayout(0, 10));
         mid.setOpaque(false);
 
-        // Role badge + section label (NORTH của mid)
+        // Role badge + section label (NORTH of mid)
         JPanel topMeta = new JPanel();
         topMeta.setLayout(new BoxLayout(topMeta, BoxLayout.Y_AXIS));
         topMeta.setOpaque(false);
@@ -596,15 +614,15 @@ public class MainDashboard extends JFrame {
         scroll.getViewport().setOpaque(false);
         scroll.getVerticalScrollBar().setUnitIncrement(12);
         mid.add(scroll, BorderLayout.CENTER); // → CENTER sẽ mở rộng đầy đủ chiều cao
-        
+
         // Pagination controls (SOUTH of mid)
         JPanel paginationPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
         paginationPanel.setOpaque(false);
-        
+
         btnPrevNotif = new JButton("◀ Trước");
         btnNextNotif = new JButton("Sau ▶");
         lblNotifPage = new JLabel("Trang 1/1");
-        
+
         Font btnFont = new Font("Segoe UI", Font.PLAIN, 12);
         btnPrevNotif.setFont(btnFont);
         btnNextNotif.setFont(btnFont);
@@ -614,27 +632,28 @@ public class MainDashboard extends JFrame {
         btnNextNotif.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         lblNotifPage.setFont(new Font("Segoe UI", Font.BOLD, 12));
         lblNotifPage.setForeground(new Color(100, 116, 139));
-        
+
         btnPrevNotif.addActionListener(e -> {
             if (notifCurrentPage > 1) {
                 notifCurrentPage--;
                 updateNotificationView();
             }
         });
-        
+
         btnNextNotif.addActionListener(e -> {
             int maxPage = (int) Math.ceil((double) currentNotifs.size() / notifItemsPerPage);
-            if (maxPage == 0) maxPage = 1;
+            if (maxPage == 0)
+                maxPage = 1;
             if (notifCurrentPage < maxPage) {
                 notifCurrentPage++;
                 updateNotificationView();
             }
         });
-        
+
         paginationPanel.add(btnPrevNotif);
         paginationPanel.add(lblNotifPage);
         paginationPanel.add(btnNextNotif);
-        
+
         mid.add(paginationPanel, BorderLayout.SOUTH);
 
         updateNotificationView();
@@ -688,39 +707,49 @@ public class MainDashboard extends JFrame {
     }
 
     private void updateNotificationView() {
-        if (notifListPanel == null) return;
+        if (notifListPanel == null)
+            return;
         notifListPanel.removeAll();
-        
+
         if (currentNotifs.isEmpty()) {
             JLabel empty = new JLabel("Không có thông báo nào.");
             empty.setFont(new Font("Segoe UI", Font.ITALIC, 13));
             empty.setForeground(new Color(148, 163, 184));
             notifListPanel.add(empty);
-            
-            if(lblNotifPage != null) lblNotifPage.setText("Trang 1/1");
-            if(btnPrevNotif != null) btnPrevNotif.setEnabled(false);
-            if(btnNextNotif != null) btnNextNotif.setEnabled(false);
+
+            if (lblNotifPage != null)
+                lblNotifPage.setText("Trang 1/1");
+            if (btnPrevNotif != null)
+                btnPrevNotif.setEnabled(false);
+            if (btnNextNotif != null)
+                btnNextNotif.setEnabled(false);
         } else {
             DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            
+
             int maxPage = (int) Math.ceil((double) currentNotifs.size() / notifItemsPerPage);
-            if (maxPage == 0) maxPage = 1;
-            if (notifCurrentPage > maxPage) notifCurrentPage = maxPage;
-            if (notifCurrentPage < 1) notifCurrentPage = 1;
-            
+            if (maxPage == 0)
+                maxPage = 1;
+            if (notifCurrentPage > maxPage)
+                notifCurrentPage = maxPage;
+            if (notifCurrentPage < 1)
+                notifCurrentPage = 1;
+
             int startIdx = (notifCurrentPage - 1) * notifItemsPerPage;
             int endIdx = Math.min(startIdx + notifItemsPerPage, currentNotifs.size());
-            
+
             for (int i = startIdx; i < endIdx; i++) {
                 notifListPanel.add(buildNotifCard(currentNotifs.get(i), fmt));
                 notifListPanel.add(Box.createVerticalStrut(10));
             }
-            
-            if(lblNotifPage != null) lblNotifPage.setText("Trang " + notifCurrentPage + " / " + maxPage);
-            if(btnPrevNotif != null) btnPrevNotif.setEnabled(notifCurrentPage > 1);
-            if(btnNextNotif != null) btnNextNotif.setEnabled(notifCurrentPage < maxPage);
+
+            if (lblNotifPage != null)
+                lblNotifPage.setText("Trang " + notifCurrentPage + " / " + maxPage);
+            if (btnPrevNotif != null)
+                btnPrevNotif.setEnabled(notifCurrentPage > 1);
+            if (btnNextNotif != null)
+                btnNextNotif.setEnabled(notifCurrentPage < maxPage);
         }
-        
+
         notifListPanel.revalidate();
         notifListPanel.repaint();
     }
