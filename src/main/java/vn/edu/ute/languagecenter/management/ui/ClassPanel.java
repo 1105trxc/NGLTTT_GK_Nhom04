@@ -1,13 +1,8 @@
 package vn.edu.ute.languagecenter.management.ui;
 
-import vn.edu.ute.languagecenter.management.model.Class_;
-import vn.edu.ute.languagecenter.management.model.Course;
-import vn.edu.ute.languagecenter.management.model.Room;
-import vn.edu.ute.languagecenter.management.model.Teacher;
-import vn.edu.ute.languagecenter.management.service.ClassService;
-import vn.edu.ute.languagecenter.management.service.CourseService;
-import vn.edu.ute.languagecenter.management.service.RoomService;
-import vn.edu.ute.languagecenter.management.service.TeacherService;
+import vn.edu.ute.languagecenter.management.model.*;
+import vn.edu.ute.languagecenter.management.service.*;
+import vn.edu.ute.languagecenter.management.ui.gui_finance.BranchSelectionDialog;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.CourseSelectionDialog;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.RoomSelectionDialog;
 import vn.edu.ute.languagecenter.management.ui.gui_finance.TeacherSelectionDialog;
@@ -28,6 +23,7 @@ public class ClassPanel extends JPanel {
     private final CourseService courseService = new CourseService();
     private final RoomService roomService = new RoomService();
     private final TeacherService teacherService = new TeacherService();
+    private final BranchService branchService = new BranchService();
 
     // ── Components ────────────────────────────────────────────────────────────
     private JTable table;
@@ -48,6 +44,10 @@ public class ClassPanel extends JPanel {
     private Room selectedRoom = null;
     private JTextField txtRoomName;
     private JButton btnSelectRoom;
+
+    private Branch selectedBranch = null;
+    private JTextField txtBranchName;
+    private JButton btnSelectBranch;
 
     private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearchAction;
     private Long teacherId;
@@ -153,6 +153,24 @@ public class ClassPanel extends JPanel {
         cboStatus = new JComboBox<>(new String[]{"Planned", "Open", "Ongoing", "Completed", "Cancelled"});
         formPanel.add(cboStatus, gbc);
 
+        // Row 4
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        formPanel.add(new JLabel("Chi nhánh:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridwidth = 3;
+        txtBranchName = createTextField(15);
+        txtBranchName.setEditable(false);
+        txtBranchName.setText("Chưa chọn chi nhánh...");
+        btnSelectBranch = new JButton("🔍");
+        JPanel pnlBranch = new JPanel(new BorderLayout(5, 0));
+        pnlBranch.setOpaque(false);
+        pnlBranch.add(txtBranchName, BorderLayout.CENTER);
+        pnlBranch.add(btnSelectBranch, BorderLayout.EAST);
+        formPanel.add(pnlBranch, gbc);
+        gbc.gridwidth = 1; // reset
+
         // Buttons
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
@@ -166,7 +184,7 @@ public class ClassPanel extends JPanel {
         btnPanel.add(btnClear);
 
         gbc.gridx = 0;
-        gbc.gridy = 4;
+        gbc.gridy = 5;
         gbc.gridwidth = 4;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(10, 5, 5, 5);
@@ -179,7 +197,7 @@ public class ClassPanel extends JPanel {
         add(formPanel, BorderLayout.NORTH);
 
         // Table
-        String[] cols = {"ID", "Tên lớp", "Khóa học", "Giáo viên", "Phòng", "Bắt đầu", "Kết thúc", "Sĩ số max", "Trạng thái"};
+        String[] cols = {"ID", "Tên lớp", "Khóa học", "Giáo viên", "Phòng", "Bắt đầu", "Kết thúc", "Sĩ số max", "Trạng thái", "Chi nhánh"};
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -249,6 +267,7 @@ public class ClassPanel extends JPanel {
         btnSelectCourse.addActionListener(e -> openCourseDialog());
         btnSelectTeacher.addActionListener(e -> openTeacherDialog());
         btnSelectRoom.addActionListener(e -> openRoomDialog());
+        btnSelectBranch.addActionListener(e -> openBranchDialog());
 
         // Events CRUD
         btnAdd.addActionListener(e -> addClass());
@@ -312,6 +331,23 @@ public class ClassPanel extends JPanel {
         }
     }
 
+    private void openBranchDialog() {
+        try {
+            List<Branch> list = branchService.findAllActive();
+            Window owner = SwingUtilities.getWindowAncestor(this);
+            BranchSelectionDialog dialog = new BranchSelectionDialog(owner, list);
+            dialog.setVisible(true);
+
+            Branch result = dialog.getSelectedBranch();
+            if (result != null) {
+                selectedBranch = result;
+                txtBranchName.setText(result.getBranchName());
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi tải chi nhánh: " + ex.getMessage());
+        }
+    }
+
     public void refreshData() {
         try {
             if (teacherId != null) {
@@ -332,7 +368,8 @@ public class ClassPanel extends JPanel {
                     c.getCourse() != null ? c.getCourse().getCourseName() : "",
                     c.getTeacher() != null ? c.getTeacher().getFullName() : "",
                     c.getRoom() != null ? c.getRoom().getRoomName() : "",
-                    c.getStartDate(), c.getEndDate(), c.getMaxStudent(), c.getStatus().name()
+                    c.getStartDate(), c.getEndDate(), c.getMaxStudent(), c.getStatus().name(),
+                    c.getBranch() != null ? c.getBranch().getBranchName() : ""
             });
         }
         updateTotalLabel(classes.size());
@@ -371,6 +408,10 @@ public class ClassPanel extends JPanel {
                 selectedRoom = c.getRoom();
                 txtRoomName.setText(selectedRoom != null ? selectedRoom.getRoomName() : "Chưa chọn phòng...");
 
+                // Set Branch
+                selectedBranch = c.getBranch();
+                txtBranchName.setText(selectedBranch != null ? selectedBranch.getBranchName() : "Chưa chọn chi nhánh...");
+
                 DateUtil.setLocalDate(dcStartDate, c.getStartDate());
                 DateUtil.setLocalDate(dcEndDate, c.getEndDate());
                 txtMaxStudent.setText(c.getMaxStudent() != null ? c.getMaxStudent().toString() : "0");
@@ -393,6 +434,7 @@ public class ClassPanel extends JPanel {
             c.setCourse(selectedCourse);
             c.setTeacher(selectedTeacher); // Có thể null
             c.setRoom(selectedRoom);       // Có thể null
+            c.setBranch(selectedBranch);   // Có thể null
 
             LocalDate startDate = DateUtil.getLocalDate(dcStartDate);
             if (startDate == null) throw new IllegalArgumentException("Vui lòng chọn ngày bắt đầu.");
@@ -432,6 +474,7 @@ public class ClassPanel extends JPanel {
             c.setCourse(selectedCourse);
             c.setTeacher(selectedTeacher);
             c.setRoom(selectedRoom);
+            c.setBranch(selectedBranch);
 
             LocalDate startDate = DateUtil.getLocalDate(dcStartDate);
             if (startDate == null) throw new IllegalArgumentException("Vui lòng chọn ngày bắt đầu.");
@@ -519,6 +562,9 @@ public class ClassPanel extends JPanel {
 
         selectedRoom = null;
         txtRoomName.setText("Chưa chọn phòng...");
+
+        selectedBranch = null;
+        txtBranchName.setText("Chưa chọn chi nhánh...");
 
         table.clearSelection();
     }

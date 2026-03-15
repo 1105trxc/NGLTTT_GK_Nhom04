@@ -46,7 +46,7 @@ public class Class_ {
     @Column(name = "status", nullable = false)
     private ClassStatus status = ClassStatus.Planned;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "branch_id")
     private Branch branch;
 

@@ -1,6 +1,6 @@
 package vn.edu.ute.languagecenter.management.ui;
 
-import vn.edu.ute.languagecenter.management.repo.jpa.JpaBranchRepository;
+import vn.edu.ute.languagecenter.management.service.BranchService;
 import vn.edu.ute.languagecenter.management.model.Branch;
 
 import javax.swing.*;
@@ -17,7 +17,7 @@ import java.util.List;
  */
 public class BranchPanel extends JPanel {
 
-    private final JpaBranchRepository branchDAO = new JpaBranchRepository();
+    private final BranchService branchService = new BranchService();
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -193,7 +193,7 @@ public class BranchPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        for (Branch b : branchDAO.findAll()) {
+        for (Branch b : branchService.findAll()) {
             tableModel.addRow(new Object[]{
                     b.getBranchId(), b.getBranchName(),
                     b.getAddress(), b.getPhone(), b.getStatus()
@@ -212,7 +212,7 @@ public class BranchPanel extends JPanel {
             return;
         }
         tableModel.setRowCount(0);
-        List<Branch> list = branchDAO.findAll();
+        List<Branch> list = branchService.findAll();
         list.stream()
                 .filter(b -> (b.getBranchName() != null && b.getBranchName().toLowerCase().contains(kw))
                         || (b.getAddress() != null && b.getAddress().toLowerCase().contains(kw))
@@ -246,7 +246,7 @@ public class BranchPanel extends JPanel {
             b.setAddress(txtAddress.getText().trim().isEmpty() ? null : txtAddress.getText().trim());
             b.setPhone(txtPhone.getText().trim().isEmpty() ? null : txtPhone.getText().trim());
             b.setStatus((Branch.ActiveStatus) cmbStatus.getSelectedItem());
-            branchDAO.save(b);
+            branchService.save(b);
             JOptionPane.showMessageDialog(this, "✅ Thêm chi nhánh thành công!");
 
             txtSearch.setText(""); // Xóa text tìm kiếm
@@ -262,13 +262,13 @@ public class BranchPanel extends JPanel {
             return;
         }
         try {
-            Branch b = branchDAO.findById(selectedBranchId)
+            Branch b = branchService.findById(selectedBranchId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh!"));
             b.setBranchName(txtName.getText().trim());
             b.setAddress(txtAddress.getText().trim().isEmpty() ? null : txtAddress.getText().trim());
             b.setPhone(txtPhone.getText().trim().isEmpty() ? null : txtPhone.getText().trim());
             b.setStatus((Branch.ActiveStatus) cmbStatus.getSelectedItem());
-            branchDAO.update(b);
+            branchService.update(b);
             JOptionPane.showMessageDialog(this, "✅ Cập nhật chi nhánh thành công!");
 
             searchData(); // Cập nhật lại kết quả đang search
@@ -285,7 +285,7 @@ public class BranchPanel extends JPanel {
         if (JOptionPane.showConfirmDialog(this, "Xóa chi nhánh này?", "Xác nhận",
                 JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try {
-                branchDAO.delete(selectedBranchId);
+                branchService.deleteById(selectedBranchId);
                 JOptionPane.showMessageDialog(this, "✅ Xóa chi nhánh thành công!");
 
                 searchData(); // Cập nhật lại kết quả đang search

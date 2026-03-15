@@ -332,6 +332,7 @@ CREATE TABLE branches (
   phone       VARCHAR(20) NULL,
   status      ENUM('Active','Inactive') NOT NULL DEFAULT 'Active',
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT uq_branches_name UNIQUE (branch_name)
 );
 

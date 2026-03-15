@@ -1,6 +1,8 @@
 package vn.edu.ute.languagecenter.management.ui;
 
+import vn.edu.ute.languagecenter.management.model.Branch;
 import vn.edu.ute.languagecenter.management.model.Room;
+import vn.edu.ute.languagecenter.management.service.BranchService;
 import vn.edu.ute.languagecenter.management.service.RoomService;
 
 import javax.swing.*;
@@ -11,11 +13,13 @@ import java.util.List;
 public class RoomPanel extends JPanel {
 
     private final RoomService roomService = new RoomService();
+    private final BranchService branchService = new BranchService();
 
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtName, txtCapacity, txtLocation, txtSearch;
     private JComboBox<String> cboStatus;
+    private JComboBox<Branch> cboBranch;
     private JButton btnAdd, btnUpdate, btnDelete, btnClear, btnSearch;
 
     public RoomPanel() {
@@ -64,6 +68,27 @@ public class RoomPanel extends JPanel {
         cboStatus = new JComboBox<>(new String[] { "Active", "Inactive" });
         formPanel.add(cboStatus, gbc);
 
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        formPanel.add(new JLabel("Chi nhánh:"), gbc);
+        gbc.gridx = 1;
+        gbc.gridwidth = 3;
+        cboBranch = new JComboBox<>();
+        cboBranch.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof Branch) {
+                    setText(((Branch) value).getBranchName());
+                } else {
+                    setText("--- Chọn chi nhánh ---");
+                }
+                return this;
+            }
+        });
+        formPanel.add(cboBranch, gbc);
+        gbc.gridwidth = 1; // reset
+
         // Buttons
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         btnPanel.setOpaque(false);
@@ -77,7 +102,7 @@ public class RoomPanel extends JPanel {
         btnPanel.add(btnClear);
 
         gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         gbc.gridwidth = 4;
         gbc.weightx = 1.0;
         gbc.insets = new Insets(10, 5, 5, 5);
@@ -86,7 +111,7 @@ public class RoomPanel extends JPanel {
         add(formPanel, BorderLayout.NORTH);
 
         // ===== Table =====
-        String[] cols = { "ID", "Tên phòng", "Sức chứa", "Vị trí", "Trạng thái" };
+        String[] cols = { "ID", "Tên phòng", "Sức chứa", "Vị trí", "Trạng thái", "Chi nhánh" };
         tableModel = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int r, int c) {
@@ -150,6 +175,12 @@ public class RoomPanel extends JPanel {
 
     public void refreshData() {
         try {
+            List<Branch> branches = branchService.findAllActive();
+            cboBranch.removeAllItems();
+            cboBranch.addItem(null); // Option for no branch
+            for (Branch b : branches) {
+                cboBranch.addItem(b);
+            }
             loadTable(roomService.findAll());
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Lỗi: " + e.getMessage());
@@ -159,8 +190,14 @@ public class RoomPanel extends JPanel {
     private void loadTable(List<Room> rooms) {
         tableModel.setRowCount(0);
         for (Room r : rooms) {
-            tableModel.addRow(new Object[] { r.getRoomId(), r.getRoomName(), r.getCapacity(), r.getLocation(),
-                    r.getStatus().name() });
+            tableModel.addRow(new Object[] { 
+                r.getRoomId(), 
+                r.getRoomName(), 
+                r.getCapacity(), 
+                r.getLocation(),
+                r.getStatus().name(),
+                r.getBranch() != null ? r.getBranch().getBranchName() : ""
+            });
         }
         updateTotalLabel(rooms.size());
     }
@@ -184,6 +221,21 @@ public class RoomPanel extends JPanel {
         Object loc = tableModel.getValueAt(row, 3);
         txtLocation.setText(loc != null ? loc.toString() : "");
         cboStatus.setSelectedItem(tableModel.getValueAt(row, 4));
+        
+        // Fill branch
+        Long roomId = (Long) tableModel.getValueAt(row, 0);
+        roomService.findById(roomId).ifPresent(r -> {
+            if (r.getBranch() != null) {
+                for (int i = 0; i < cboBranch.getItemCount(); i++) {
+                    Branch b = cboBranch.getItemAt(i);
+                    if (b != null && b.getBranchId().equals(r.getBranch().getBranchId())) {
+                        cboBranch.setSelectedIndex(i);
+                        return;
+                    }
+                }
+            }
+            cboBranch.setSelectedIndex(0);
+        });
     }
 
     private void addRoom() {
@@ -193,6 +245,7 @@ public class RoomPanel extends JPanel {
             r.setCapacity(Integer.parseInt(txtCapacity.getText().trim()));
             r.setLocation(txtLocation.getText().trim());
             r.setStatus(Room.ActiveStatus.valueOf((String) cboStatus.getSelectedItem()));
+            r.setBranch((Branch) cboBranch.getSelectedItem());
             roomService.save(r);
             JOptionPane.showMessageDialog(this, "Thêm phòng thành công!", "Thành công",
                     JOptionPane.INFORMATION_MESSAGE);
@@ -216,6 +269,7 @@ public class RoomPanel extends JPanel {
             r.setCapacity(Integer.parseInt(txtCapacity.getText().trim()));
             r.setLocation(txtLocation.getText().trim());
             r.setStatus(Room.ActiveStatus.valueOf((String) cboStatus.getSelectedItem()));
+            r.setBranch((Branch) cboBranch.getSelectedItem());
             roomService.update(r);
             JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             clearForm();
@@ -260,6 +314,7 @@ public class RoomPanel extends JPanel {
         txtLocation.setText("");
         txtSearch.setText("");
         cboStatus.setSelectedIndex(0);
+        cboBranch.setSelectedIndex(0);
         table.clearSelection();
     }
 

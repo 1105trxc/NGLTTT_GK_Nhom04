@@ -31,7 +31,7 @@ public class Room {
     private ActiveStatus status = ActiveStatus.Active;
 
     // Thêm mới: branch_id từ ALTER TABLE rooms ADD COLUMN branch_id
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
